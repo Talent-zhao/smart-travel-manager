@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block right-panel-content %}
+  <div class="col-sm3 col-md-2 sidebar" style="width: 200px;margin-right: 200px">
+    <div id="navbar3" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav navbar-left">
+        <li>
+          <a href="{% url 'personal' %}">我的信息
+          </a>
+        </li>
+        <li style="background-color: darkgrey;">
+          <a href="{% url 'my_questionnaire' %}" style="font-size: 20px;color: white">调查问卷
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_booking' %}">我的预订
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_like' %}" >我的点赞
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_collect' %}" >我的收藏
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_comments' %}" >我的评论
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_rate' %}">我的评分
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div  style="color: #557f55;margin-left: 200px">
+    <h3 align="center">我的旅游调查问卷</h3>
+    <table class="table" style="color: #5e8e5e;">
+      <thead>
+      <tr>
+        <th>景点类型</th>
+        <th>出行方式</th>
+        <th>旅行方式</th>
+        <th>最低预算</th>
+        <th>最高预算</th>
+        <th>操作</th>
+      </tr>
+      </thead>
+      <tbody>
+
+      <tr>
+        <td>
+          <ul id="id_sight_type" class="my_radio">
+            {% for st in sight_type %}
+              <li>
+                <label>
+                  <input type="radio" name="sight_type" value="{{ st.id }}" class="my_radio"
+                      {% if questionnaire_sight.sight_type == st.id %}
+                         checked="checked"
+                      {% endif %}
+                         required="required">
+                  {{ st.name }}
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
+        </td>
+        <td>
+          <ul id="id_travel_way" class="my_radio">
+            {% for tw in travel_way %}
+              <li>
+                <label>
+                  <input type="radio" name="travel_way" value="{{ tw.id }}" class="my_radio"
+                      {% if questionnaire_sight.travel_way == tw.id %}
+                         checked="checked"
+                      {% endif %}
+                         required="required">
+                  {{ tw.name }}
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
+
+        </td>
+        <td>
+
+          <ul id="id_sight_way" class="my_radio">
+            {% for sw in sight_way %}
+              <li>
+                <label>
+                  <input type="radio" name="sight_way" value="{{ sw.id }}" class="my_radio"
+                      {% if questionnaire_sight.sight_way == sw.id %}
+                         checked="checked"
+                      {% endif %}
+                         required="required">
+                  {{ sw.name }}
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
+
+        </td>
+        <td>
+          <p style="padding-top: 1px;padding-bottom:1px;margin-top: 1px;margin-bottom: 1px;">
+
+            <label>
+              <span>最低</span>
+              <input name="cost_min" value={{ questionnaire_sight.cost_min }} oninput="value=value.replace(/[^\d]/g,'');"/>元
+
+            </label>
+          </p>
+        </td>
+        <td>
+          <p style="padding-top: 1px;padding-bottom:1px;margin-top: 1px;margin-bottom: 1px;">
+
+            <label>
+
+              <span>最高</span>
+              <input name="cost_max" value={{ questionnaire_sight.cost_max }} oninput="value=value.replace(/[^\d]/g,'');"/>元
+
+            </label>
+          </p>
+        </td>
+        <td>
+          <button onclick="summit()" style="color: #5e8e5e;">修改提交 </button>
+        </td>
+      </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+{% endblock %}
+{% block bottom-js %}
+  <script>
+      function summit(value) {
+          var csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value;
+          // 选择具有选中状态的 radio 元素
+          const sight_type = document.querySelector('input[name="sight_type"]:checked');
+          const travel_way = document.querySelector('input[name="travel_way"]:checked');
+          const sight_way = document.querySelector('input[name="sight_way"]:checked');
+          var cost_max = parseInt(document.getElementsByName("cost_max")[0].value);  // 最高预算
+          var cost_min = parseInt(document.getElementsByName("cost_min")[0].value);  // 最低预算
+          if (cost_max < cost_min) {
+              alert("最高预算不能小于最低预算");
+              return false;
+          }
+          $.ajax({
+              url: window.__user_path_prefix__ + '/my_questionnaire/',
+              type: 'POST',
+              data: {'user_id': {{ user_id }},
+                  'sight_type': sight_type.value,
+                  'travel_way': travel_way.value,
+                  'sight_way': sight_way.value,
+                  'cost_min': cost_min,
+                  'cost_max': cost_max,
+              },
+
+              success: function (res) {
+                  if(res.code === 0){
+                      window.location.href = '/login';
+                  }else{
+                      window.location.reload();
+                  }
+
+              },
+              error: function (e) {
+                  window.location.href = '/login';
+              },
+              beforeSend: function (xhr, settings) {
+                  xhr.setRequestHeader("X-CSRFToken", csrftoken);
+              }
+          });
+
+      }
+
+  </script>
+
+{% endblock %}

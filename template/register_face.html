@@ -1,0 +1,258 @@
+{% load static %}
+<html lang="zh-CN">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/static/image/tral.png">
+  <title>旅游推荐系统</title>
+  <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/static/css/dashboard.css" rel="stylesheet">
+  <link href="/static/css/custom.css" rel="stylesheet">
+  <script src="/static/js/html5shiv.min.js"></script>
+  <script src="/static/js/respond.min.js"></script>
+  <script src="/static/js/jquery-2.1.1.min.js"></script>
+  <script src="/static/js/jquery.min.js"></script>
+</head>
+
+<style>
+    * { margin: 0; padding: 0; }
+    .my_radio { list-style-type: none; padding: 0; margin: 0; }
+    .my_radio li { display: inline; margin-right: 10px; }
+</style>
+
+<body style="text-align:center;margin-top:100px;padding-top:0;background: #ffffff url({% static 'image/background.jpg' %});background-size:100% 150%;">
+<div class="col-md-6 col-md-offset-3" style="margin-top: 0;padding-top:0;border: grey solid 3px;animation-name: shake;
+    animation-duration: 1s;background: #FFFFFF;box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);border-radius: 20px;">
+  <h4 style="text-align: center;color: #4CAF50;">
+    旅游推荐系统用户注册（人脸识别）
+  </h4>
+  <form action="{% url 'register_face' %}" method='post' autocomplete="on" onsubmit="return false;">
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="form-group"
+           style="text-align: left; margin-top: 0;margin-bottom: 0;padding-bottom: 0;padding-top: 0;font-size: 12px">
+        {{ field.label_tag }}
+        {{ field.errors }}
+        {{ field }}
+      </div>
+    {% endfor %}
+
+    <div style="text-align: left; margin-bottom: 2px;margin-top: 2px;font-size: 12px">
+      <p style="padding-top: 1px;padding-bottom:1px;margin-top: 1px;margin-bottom: 1px;">
+        <strong>请填写一份旅游调查问卷：</strong></p>
+      <ul id="id_sight_type" class="my_radio">
+        <span>景点类型:</span>
+        {% for st in sight_type %}
+          <li>
+            <label>
+              <input type="radio" name="sight_type" value="{{ st.id }}" class="my_radio" required="required">
+              {{ st.name }}
+            </label>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <ul id="id_travel_way" class="my_radio">
+        <span>出行方式:</span>
+        {% for tw in travel_way %}
+          <li>
+            <label>
+              <input type="radio" name="travel_way" value="{{ tw.id }}" class="my_radio" required="required">
+              {{ tw.name }}
+            </label>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <ul id="id_sight_way" class="my_radio">
+        <span>旅行方式:</span>
+        {% for sw in sight_way %}
+          <li>
+            <label>
+              <input type="radio" name="sight_way" value="{{ sw.id }}" class="my_radio" required="required">
+              {{ sw.name }}
+            </label>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <p style="padding-top: 1px;padding-bottom:1px;margin-top: 1px;margin-bottom: 1px;">
+        <span>预算:</span>
+        <label>
+          <span>最低</span>
+          <input name="cost_min" oninput="value=value.replace(/[^\d]/g,'');"/>元
+          <span>最高</span>
+          <input name="cost_max" oninput="value=value.replace(/[^\d]/g,'');"/>元
+        </label>
+      </p>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 0;padding-bottom: 0">
+      <label>获取头像</label>
+      <div id="cameraBtn">
+        <input type="button" id="init" onclick="captureInit()" value="开启摄像头"
+               style="background: #4CAF50;color: #FFFFFF;width: 78px;height: 30px;margin-left: 10px;border-radius: 5px"/>
+        <input type="button" id="capture" onclick="capture_s()" value="拍照"
+               style="background: #4CAF50;color: #FFFFFF;width: 78px;height: 30px;margin-left: 10px;border-radius: 5px"/>
+      </div>
+      <div id="cameraDiv" style="width: 650px">
+        <video id="video" autoplay style="width: 300px;height: 180px"></video>
+        <canvas id="canvas" width="300" height="180"></canvas>
+      </div>
+    </div>
+
+    <div style="text-align: center;margin-bottom: 10px">
+      <button type="reset"
+              style="background: #4CAF50;color: #FFFFFF;width: 50px;height: 30px;margin-left: -10px;border-radius: 5px;">
+        取消
+      </button>
+      <input type="button" id="queren" onclick="queren_s()" value="提交"
+             style="background: #4CAF50;color: #FFFFFF;width: 50px;height: 30px;margin-left: 50px;border-radius: 5px;"/>
+    </div>
+    <p style="text-align: center;margin-top: 10px;color: #b3b3b3">已有账号？
+      <a href="{% url 'login_face' %}?type=face" style="color: #4CAF50;">点我登录</a>
+    </p>
+  </form>
+</div>
+</body>
+
+<script type="text/javascript">
+    var video = document.getElementById("video");
+    var canvas = document.getElementById("canvas");
+    var context = canvas.getContext("2d");
+    var imgWidth = "300";
+    var imgHeight = "180";
+    var captureState = 0;
+
+    function getUserMedia(constrains, success, error) {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia(constrains).then(success).catch(error);
+        } else if (navigator.webkitGetUserMedia) {
+            navigator.webkitGetUserMedia(constrains).then(success).catch(error);
+        } else if (navigator.mozGetUserMedia) {
+            navagator.mozGetUserMedia(constrains).then(success).catch(error);
+        } else if (navigator.getUserMedia) {
+            navigator.getUserMedia(constrains).then(success).catch(error);
+        } else {
+            alert("不支持的浏览器");
+        }
+    }
+
+    function success(stream) {
+        var CompatibleURL = window.URL || window.webkitURL;
+        try {
+            video.srcObject = stream;
+        } catch (e) {
+            video.src = CompatibleURL.createObjectURL(stream);
+        }
+        video.play();
+    }
+
+    function error(err) {
+        alert("访问用户媒体设备失败," + err.name + "" + err.message);
+    }
+
+    function captureInit() {
+        if ((navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia) {
+            getUserMedia({video: {width: imgWidth, height: imgHeight}}, success, error);
+            if (captureState === 0) {
+                captureState = 1;
+            }
+        } else {
+            captureState = 0;
+            alert("你的浏览器不支持访问用户媒体设备或访问地址不是https开头");
+        }
+    }
+
+    function capture_s() {
+        if (captureState === 0) {
+            alert("请先开启摄像头");
+            return;
+        }
+        context.drawImage(video, 0, 0, imgWidth, imgHeight);
+        captureState = 2;
+    }
+
+    function _radioValue(name) {
+        var els = document.getElementsByName(name);
+        for (var i = 0; i < els.length; i++) {
+            if (els[i].checked) return els[i].value;
+        }
+        return null;
+    }
+
+    function toVaild() {
+        var age = parseInt((document.getElementsByName("age")[0] || {}).value || "0");
+        if (age <= 0) {
+            alert("年龄不能小于0");
+            return false;
+        }
+        var cost_max = parseInt((document.getElementsByName("cost_max")[0] || {}).value || "0");
+        var cost_min = parseInt((document.getElementsByName("cost_min")[0] || {}).value || "0");
+        if (cost_max && cost_min && cost_max < cost_min) {
+            alert("最高预算不能小于最低预算");
+            return false;
+        }
+        if (!_radioValue("sight_type") || !_radioValue("travel_way") || !_radioValue("sight_way")) {
+            alert("请完整填写问卷选项");
+            return false;
+        }
+        return true;
+    }
+
+    function queren_s() {
+        if (!toVaild()) return;
+        if (captureState !== 2) {
+            alert("请先开启摄像头并拍照");
+            return;
+        }
+        var mycanvas1 = document.getElementById('canvas');
+        mycanvas1.toBlob(blob => {
+            const formData = new FormData();
+
+            // RegisterForm 字段（按 name 收集）
+            var fields = ["username", "password1", "password2", "gender", "age", "phone", "country", "address", "email"];
+            for (var i = 0; i < fields.length; i++) {
+                var n = fields[i];
+                var el = document.getElementsByName(n)[0];
+                if (el) formData.append(n, el.value);
+            }
+
+            // 问卷
+            formData.append("sight_type", _radioValue("sight_type"));
+            formData.append("travel_way", _radioValue("travel_way"));
+            formData.append("sight_way", _radioValue("sight_way"));
+            formData.append("cost_min", (document.getElementsByName("cost_min")[0] || {}).value || "");
+            formData.append("cost_max", (document.getElementsByName("cost_max")[0] || {}).value || "");
+
+            // 人脸图片
+            formData.append('icon', blob, 'photo.jpg');
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            $.ajax({
+                url: '{% url 'register_face' %}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: (data) => {
+                    if (data.code === 1) {
+                        alert(data.msg);
+                    } else {
+                        window.location.href = '/login_face/?type=face';
+                    }
+                },
+                error: () => {
+                    console.error('Error uploading photo.');
+                },
+                beforeSend: function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                }
+            });
+        }, 'image/jpeg', 0.8);
+    }
+</script>
+</html>
+
+

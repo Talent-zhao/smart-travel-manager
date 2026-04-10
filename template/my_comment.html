@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block right-panel-content %}
+  <div class="col-sm3 col-md-2 sidebar">
+    <div id="navbar3" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav navbar-left">
+        <li>
+          <a href="{% url 'personal' %}">我的信息
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_questionnaire' %}" >调查问卷
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_booking' %}" >我的预订
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_like' %}" >我的点赞
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_collect' %}" >我的收藏
+          </a>
+        </li>
+        <li style="background-color: darkgrey;">
+          <a href="{% url 'my_comments' %}" style="font-size: 20px;color: white">我的评论
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_rate' %}">我的评分
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div  style="color: #5e8e5e;margin-left: 200px">
+    <h3 align="center">我的评论</h3>
+    <table class="table" style="color: #5e8e5e;">
+      <thead>
+      <tr>
+        <th>景点</th>
+        <th>评论内容</th>
+        <th>评论时间</th>
+        <th>操作</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for comment in comment_sights %}
+        <tr>
+          <td>{{ comment.sight.name }}</td>
+          <td>{{ comment.content }}</td>
+          <td>{{ comment.create_time }}</td>
+          <td>
+            <a href="{% url 'sight' comment.sight.id %}?selected={{ selected }}" style="margin-right: 5px;">查看</a>
+            <a href="{% url 'delete_comment' comment.id %}" >删除</a>
+
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% endblock %}
+

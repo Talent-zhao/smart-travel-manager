@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load myfilter %}
+{% block right-panel-content %}
+  <div style="margin-bottom: 10px;">
+    {% if city_id %}
+      <a href="{% url selected %}?city_id={{ city_id }}" style="color: #5e8e5e">返回上一级</a>
+    {% else %}
+      <a href="{% url selected %}" style="color: #5e8e5e">返回上一级</a>
+    {% endif %}
+  </div>
+
+  <div class="container-fluid">
+    <div class="row clearfix">
+      <div class="col-md-4 column" style="width: 300px;height: 450px;color: #5e8e5e;background-color: #dbf8cc">
+        <img alt="景点图片"
+             title="景点图片"
+             src="{% if sight.cover_pic %}/{{ sight.cover_pic }}{% else %}/static/image/no_image.svg{% endif %}"
+             width="150"
+             height="200"
+             onerror="this.onerror=null;this.src='/static/image/no_image.svg';"
+        />
+        <div style="margin-top: 10px;margin-left: 0;padding-left: 0;float: left">
+          <ul style="margin-top: 10px;margin-left: 0;padding-left: 0;float: left">
+            <li>
+              <div id="booking">
+                <label>预订出行:</label>
+                <label>
+                  {% if sight|sight_booked_by_user:user_id %}
+                    <input type="radio" name="value_{{ sight.id }}" value="1"
+                           checked="checked"
+                           onclick="check(this.value)">我已预订
+                    <input type="radio" name="value_{{ sight.id }}" value="0"
+                           onclick="check(this.value)">取消预订
+                  {% else %}
+                    <input type="radio" name="value_{{ sight.id }}" value="1"
+                           onclick="summit_booking(this.value)">我要预订
+                  {% endif %}
+                </label>
+              </div>
+            </li>
+            <li>
+              评分:{{ sight.all_score }}
+            </li>
+            {% if is_rate is not None %}
+              <h4>您的评分: {{ is_rate.score }}</h4>
+            {% else %}
+              <li>
+                <form action="{% url 'score' sight.id %}?selected={{ selected }}&city_id={{ city_id }}"
+                      method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="selected" value="{{ selected }}"/>
+                  <p>添加评分</p>
+                  <select name="score">
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                    <option>6</option>
+                    <option>7</option>
+                    <option>8</option>
+                    <option>9</option>
+                    <option>10</option>
+                  </select>
+                  <button type="submit" class="btn btn-default">提交</button>
+                </form>
+              </li>
+
+            {% endif %}
+            <li>
+              评分人数:{{ sight.rate_num }}
+            </li>
+            <li>
+              点赞人数:{{ sight.like_num }} ---
+              <a href="{% url 'like' sight.id %}?selected={{ selected }}&city_id={{ city_id }}">
+                {% if is_like %}取消点赞{% else %}
+                  点赞{% endif %}</a>
+            </li>
+            <li>
+              收藏人数:{{ sight.collect_num }} ---
+              <a href="{% url 'collect' sight.id %}?selected={{ selected }}&city_id={{ city_id }}">
+                {% if is_collect %}取消收藏{% else %}
+                  收藏{% endif %}</a>
+            </li>
+
+          </ul>
+        </div>
+
+      </div>
+      <div class="col-md-6 column" style="width: 70%;height: 450px;color: #5e8e5e;background-color: #bfebf5" align="center">
+        <ol class="list-unstyled">
+          <li>
+            <strong style="font-size: 20px;color: #5e8e5e">{{ sight.name }}</strong>
+          </li>
+          <li>
+            <span style="font-size: 16px;margin-bottom: 2px;">{{ sight.rank }}</span>
+          </li>
+          <li style="margin-left: 10px">
+            <span style="font-size: 16px;margin-bottom: 2px;"><strong style="font-size: 14px">简介：</strong>{{ sight.detail|safe }}</span>
+          </li>
+          <li>
+            {% for tip in sight.tips|to_list %}
+              <p style="font-size: 16px;margin-bottom: 2px;">{{ tip }}</p>
+            {% endfor %}
+          </li>
+        </ol>
+      </div>
+    </div>
+    <div class="row clearfix">
+      <div class="col-md-12 column">
+        <form class="form" fole="form"
+              action="{% url 'comment' sight.id %}?selected={{ selected }}&city_id={{ city_id }}" method="post">
+          {% csrf_token %}
+          <textarea placeholder="快来说说点什么吧" class="form-control" name="comment" cols="10" rows="10"></textarea>
+          <input type="hidden" name="selected" value="{{ selected }}"/>
+
+          <button type="submit" class="btn btn-default">提交评论</button>
+        </form>
+        <p>评论:({{ sight.commentsight_set|count }})</p>
+        {% for comment in comments %}
+          <blockquote>
+            <p>{{ comment.user.name }}:</p>
+            <p>{{ comment.content }}
+            </p>
+            <small>{{ comment.create_time }}-----------
+              <a href="{% url 'comment_like' comment.id %}?selected={{ selected }}&city_id={{ city_id }}">
+                {% if user_id|to_str in comment.like_users|split:',' %}已点赞
+                {% else %}
+                  点赞
+                {% endif %}
+                ({{ comment.like_num }})
+              </a>
+            </small>
+          </blockquote>
+        {% endfor %}
+      </div>
+    </div>
+    <div style="border-top: 1px solid black;">
+      <h5>给你推荐</h5>
+      {% for sight in recommend_sights %}
+        <div style="display: inline-block;margin-bottom: 10px;">
+
+          <div class="book_purchase_img" style="text-align: center">
+            <img class="img-thumbnail sight-image"
+                 alt="{{ sight.name }}"
+                 title="{{ sight.name }}"
+                 src="{% if sight.cover_pic %}/{{ sight.cover_pic }}{% else %}/static/image/no_image.svg{% endif %}"
+                 onerror="this.onerror=null;this.src='/static/image/no_image.svg';"
+            />
+
+          </div>
+          <div style="text-align: center">
+            <h3>
+              <a href="{% url 'sight' sight.id %}?selected={{ selected }}&city_id={{ city_id }}">    {{ sight.name|slice:":8" }}</a>
+            </h3>
+
+          </div>
+
+        </div>
+      {% endfor %}
+    </div>
+
+  </div>
+{% endblock %}
+{% block bottom-js %}
+  <script>
+      function summit_booking(value) {
+          var csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value;
+          $.ajax({
+              url: window.__user_path_prefix__ + '/booking/{{ sight.id }}/',
+              type: 'POST',
+              data: {'is_bookiing': value},
+
+              success: function (res) {
+                  if (res.code === 0) {
+                      window.location.href = '/login';
+                  } else {
+                      window.location.reload();
+                  }
+
+              },
+              error: function (e) {
+                  window.location.href = '/login';
+              },
+              beforeSend: function (xhr, settings) {
+                  xhr.setRequestHeader("X-CSRFToken", csrftoken);
+              }
+          });
+
+      }
+
+  </script>
+
+{% endblock %}
+
+

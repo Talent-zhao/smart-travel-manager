@@ -1,0 +1,22 @@
+{
+  "framework": "pytorch",
+  "dataset": "olivetti_faces",
+  "sklearn_cache": "E:\\File\\travel_manager_ga\\travel_manager\\travel_manager\\offline\\data\\face_datasets\\sklearn_cache",
+  "checkpoint": "E:\\File\\travel_manager_ga\\travel_manager\\travel_manager\\offline\\data\\face_models\\cnn\\face_cnn.pt",
+  "n_classes": 40,
+  "test_accuracy": 0.99,
+  "best_val_accuracy": 1.0,
+  "macro_f1": 0.9880952380952379,
+  "train_seconds": 46.81,
+  "params": {
+    "epochs": 80,
+    "batch_size": 32,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "dropout_fc1": 0.5,
+    "dropout_fc2": 0.3,
+    "test_size": 0.25,
+    "random_state": 42,
+    "device": "cpu"
+  }
+}

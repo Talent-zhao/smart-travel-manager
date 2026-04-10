@@ -1,0 +1,75 @@
+{% extends "xadmin/base_site.html" %}
+{% load i18n xadmin_tags %}
+
+{% block breadcrumbs %}
+<ul class="breadcrumb">
+  <li><a href="{% url 'xadmin:index' %}">{% trans "Home" %}</a></li>
+  <li><a href="/xadmin/face_algorithm_manage/">算法管理（人脸识别实验）</a></li>
+  <li class="active">实验历史</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="margin: 16px;">
+  <div class="clearfix" style="margin-bottom: 12px;">
+    <a href="/xadmin/face_algorithm_manage/" class="btn btn-default">
+      <i class="fa fa-arrow-left"></i> 返回算法管理
+    </a>
+    <a href="{% url 'xadmin:index' %}" class="btn btn-default">
+      <i class="fa fa-home"></i> {% trans "Home" %}
+    </a>
+  </div>
+  <div class="alert alert-info">
+    <strong>说明</strong>：下列为每次<strong>成功完成训练</strong>后自动追加的记录（朴素贝叶斯与 CNN）。<br/>
+    持久化文件：<code>{{ history_rel_path }}</code> · 最多保留 {{ max_keep }} 条。
+  </div>
+
+  {% if not history_rows %}
+  <div class="panel panel-default">
+    <div class="panel-body text-muted">尚无实验记录。请在「算法管理」中完成至少一次训练。</div>
+  </div>
+  {% else %}
+  <div class="panel panel-primary">
+    <div class="panel-heading"><i class="fa fa-history"></i> 训练实验历史（新在上）</div>
+    <div class="panel-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table table-striped table-bordered" style="margin-bottom: 0; font-size: 12px;">
+          <thead>
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th style="width: 150px;">记录时间</th>
+            <th style="width: 200px;">算法</th>
+            <th style="width: 90px;">test_acc</th>
+            <th style="width: 80px;">macro_f1</th>
+            <th style="width: 70px;">耗时(s)</th>
+            <th style="width: 90px;">CNN best_val</th>
+            <th>参数 params</th>
+            <th>指标 metrics</th>
+          </tr>
+          </thead>
+          <tbody>
+          {% for row in history_rows %}
+          <tr>
+            <td>{{ row.n }}</td>
+            <td>{{ row.saved_at }}</td>
+            <td>{{ row.algorithm_label }}</td>
+            <td>{% if row.acc is not None %}{{ row.acc|floatformat:4 }}{% else %}—{% endif %}</td>
+            <td>{% if row.f1 is not None %}{{ row.f1|floatformat:4 }}{% else %}—{% endif %}</td>
+            <td>{% if row.sec is not None %}{{ row.sec }}{% else %}—{% endif %}</td>
+            <td>{% if row.best_val is not None %}{{ row.best_val|floatformat:4 }}{% else %}—{% endif %}</td>
+            <td style="max-width: 280px; vertical-align: top;">
+              <pre style="max-height: 180px; overflow: auto; font-size: 10px; margin: 0; white-space: pre-wrap; word-break: break-all; background: #f8f8f8; padding: 6px;">{{ row.params_json }}</pre>
+            </td>
+            <td style="max-width: 280px; vertical-align: top;">
+              <pre style="max-height: 180px; overflow: auto; font-size: 10px; margin: 0; white-space: pre-wrap; word-break: break-all; background: #f8f8f8; padding: 6px;">{{ row.metrics_json }}</pre>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

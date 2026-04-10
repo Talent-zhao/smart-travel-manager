@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block style %}
+  <link type="text/css" rel="stylesheet" href="/static/css/slideShow.css"/>
+  <link type="text/css" rel="stylesheet" href="/static/css/swiper.min.css"/>
+{% endblock %}
+
+{% block head_script %}
+  <script type="text/javascript">
+      var index = 0;
+
+      //效果
+      function ChangeImg() {
+          index++;
+          var img = document.getElementsByClassName("img-slide");
+          var h2 = document.getElementsByClassName("h2-slide");
+          if (index >= img.length - 1) index = 0;
+          for (var i = 0; i < img.length; i++) {
+
+              img[i].style['display'] = 'none';
+              h2[i].style['display'] = 'none';
+          }
+          img[index].style['display'] = 'block';
+          h2[index].style['display'] = 'block';
+      }
+
+      // 上一张点击事件
+      function swiperPrev() {
+          index--;
+          var img = document.getElementsByClassName("img-slide");
+          var h2 = document.getElementsByClassName("h2-slide");
+          if (index < 0) index = img.length - 1;
+          for (var i = 0; i < img.length; i++) {
+              console.log(i)
+              img[i].style['display'] = 'none';
+              h2[i].style['display'] = 'none';
+          }
+          img[index].style['display'] = 'block';
+          h2[index].style['display'] = 'block';
+      }
+
+      // 下一张点击事件
+      function swiperNext() {
+          ChangeImg();
+      }
+
+      //设置定时器，每隔2秒切换一张图片
+      setInterval(ChangeImg, 2000);
+  </script>
+{% endblock %}
+{% block right-panel-content %}
+  {# 轮播图#}
+  <div style="text-align: center;">
+    <div class="imgBox">
+      {% for carousel in city_carousels %}
+        <div class="swiper-button-prev" onclick="swiperPrev()"></div>
+        <div class="swiper-container swiper-container-horizontal">
+          <h2 class="h2-slide"
+              style="display:  {% if forloop.counter == 1 %}block{% else %}none{% endif %}">
+            <a href="{% url 'city' carousel.id %}?selected={{ selected }}" style="color: #43875f">{{ carousel.name }}</a>
+          </h2>
+
+          <div class="swiper-pagination swiper-pagination-bullets">
+            {% for _ in city_carousels %}
+              {% if forloop.parentloop.counter == forloop.counter %}
+                <span class="swiper-pagination-bullet swiper-pagination-bullet-active"></span>
+              {% else %}
+                <span class="swiper-pagination-bullet"></span>
+              {% endif %}
+
+            {% endfor %}
+
+          </div>
+
+          <a href="{% url 'city' carousel.id %}?selected={{ selected }}">
+            <img class="img-slide img{{ forloop.counter }}"
+                 {% if forloop.counter == 1 %}style="display:block"{% else %}style="display:none"{% endif %}
+                 src="{% if carousel.cover_pic %}/{{ carousel.cover_pic }}{% else %}/static/image/no_image.svg{% endif %}"
+                 alt="城市封面"
+                 title="城市封面"
+                 onerror="this.onerror=null;this.src='/static/image/no_image.svg';"
+            />
+          </a>
+
+        </div>
+        <div class="swiper-button-next" onclick="swiperNext()"></div>
+
+      {% endfor %}
+    </div>
+    <div>
+      <h2 class="h2-slide" style="color: #43875f">系统功能介绍</h2>
+
+      <div>
+        <p style="color: #2e9e5c">深度学习在旅游景点推荐系统的应用可以帮助系统了解用户的偏好和需求，从而提供个性化的推荐。这个基于大数据的旅游景点推荐系统的设计与实现主要包括以下几个内容：
+          ①注册和登录：设计一个用户注册和登录功能，这样用户可以创建自己的账户并提供基本的个人信息，如姓名、性别、年龄、国籍等。
+          ②用户调查和问卷：设计问卷或调查表，通过用户填写来获取详细的旅行偏好和兴趣。可以包括问题如目标旅行地点、旅行类型（文化、冒险、自然等）、预算范围、出行方式偏好（独自旅行、与家人、与朋友等）等。
+          ③用户行为分析：跟踪用户在系统中的行为，例如点击的景点、收藏的景点、预订记录、评论和评分等。这些数据可以帮助系统了解用户的喜好和偏好。
+          ④实时反馈和评价：提供用户对推荐结果的反馈和评价功能，让他们可以标记推荐结果的满意度，提供意见和建议，或者进行额外的评论。这些反馈可以帮助系统改进推荐算法和提供更准确的推荐。</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

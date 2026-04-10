@@ -1,0 +1,18 @@
+.imgBox {
+
+    width: 80%;
+    height: 100%;
+    margin: 0 auto;
+
+}
+
+.imgBox img {
+    border-top: 2px solid cadetblue;
+    width: 100%;
+    height: 366px;
+    margin: 0 auto;
+    padding-top: 5px;
+    padding-bottom: 15px;
+
+}
+

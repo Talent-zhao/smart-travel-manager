@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block right-panel-content %}
+  <div class="col-sm3 col-md-2 sidebar">
+    <div id="navbar3" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav navbar-left">
+        <li>
+          <a href="{% url 'personal' %}">我的信息
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_questionnaire' %}" >调查问卷
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_booking' %}" >我的预订
+          </a>
+        </li>
+        <li style="background-color: darkgrey;">
+          <a href="{% url 'my_like' %}" style="font-size: 20px;color: white">我的点赞
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_collect' %}" >我的收藏
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_comments' %}" >我的评论
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_rate' %}" >我的评分
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div  style="color: #5e8e5e;margin-left: 200px">
+    <h3 align="center">我点赞过的景点</h3>
+    <table class="table" style="color: #5e8e5e;">
+      <thead>
+      <tr>
+        <th>景点</th>
+        <th>推荐指数</th>
+        <th>排名</th>
+        <!--<th>简介</th>-->
+        <th>操作</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for like_sight in like_sights %}
+        <tr>
+          <td>{{ like_sight.sight.name }}</td>
+          <td>{{ like_sight.sight.grade }}</td>
+          <td>{{ like_sight.sight.rank }}</td>
+          <!--<td style="width: 330px">{{ like_sight.sight.detail }}</td>-->
+          <td><a href="{% url 'sight' like_sight.sight.id %}?selected={{ selected }}">查看</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% endblock %}

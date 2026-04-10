@@ -1,0 +1,120 @@
+{% extends "xadmin/base_site.html" %}
+{% load i18n xadmin_tags %}
+
+{% block breadcrumbs %}
+<ul class="breadcrumb">
+  <li><a href="{% url 'xadmin:index' %}">{% trans "Home" %}</a></li>
+  <li class="active">一键爬取旅游信息</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="panel panel-default" style="margin: 20px;">
+  <div class="panel-heading">
+    <h3 class="panel-title">
+      <i class="fa fa-spider"></i> 一键爬取旅游信息
+    </h3>
+  </div>
+  <div class="panel-body">
+    <div class="alert alert-info">
+      <h4><i class="fa fa-info-circle"></i> 功能说明</h4>
+      <p>此功能将自动爬取以下国家的所有旅游信息：</p>
+      <ul>
+        <li>中国 - 包括所有城市的景点、美食、购物、活动、酒店等信息</li>
+        <li>意大利 - 包括所有城市的景点、美食、购物、活动、酒店等信息</li>
+        <li>埃及 - 包括所有城市的景点、美食、购物、活动、酒店等信息</li>
+        <li>摩洛哥 - 包括所有城市的景点、美食、购物、活动、酒店等信息</li>
+        <li>泰国 - 包括所有城市的景点、美食、购物、活动、酒店等信息</li>
+        <li>马来西亚 - 包括所有城市的景点、美食、购物、活动、酒店等信息</li>
+      </ul>
+      <p><strong>注意：</strong></p>
+      <ul>
+        <li>爬取过程可能需要较长时间，请耐心等待</li>
+        <li>数据将保存到 <code>travel.txt</code> 文件中</li>
+        <li>爬取完成后，请使用"导入数据"功能将数据导入到数据库</li>
+        <li>建议在服务器负载较低时执行此操作</li>
+      </ul>
+    </div>
+    
+    <div id="spider-status" style="display: none; margin: 20px 0;">
+      <div class="alert alert-warning">
+        <i class="fa fa-spinner fa-spin"></i> <span id="status-text">正在启动爬虫任务...</span>
+      </div>
+    </div>
+    
+    <div id="spider-result" style="display: none; margin: 20px 0;">
+      <div class="alert alert-success">
+        <i class="fa fa-check-circle"></i> <span id="result-text"></span>
+      </div>
+    </div>
+    
+    <form id="spider-form" method="post" style="margin-top: 20px;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary btn-lg" id="start-spider-btn">
+        <i class="fa fa-play"></i> 开始爬取
+      </button>
+      <a href="{% url 'xadmin:travel_city_changelist' %}" class="btn btn-default btn-lg">
+        <i class="fa fa-arrow-left"></i> 返回城市管理
+      </a>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('spider-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    var btn = document.getElementById('start-spider-btn');
+    var statusDiv = document.getElementById('spider-status');
+    var resultDiv = document.getElementById('spider-result');
+    var statusText = document.getElementById('status-text');
+    var resultText = document.getElementById('result-text');
+    
+    // 禁用按钮
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 正在启动...';
+    
+    // 显示状态
+    statusDiv.style.display = 'block';
+    resultDiv.style.display = 'none';
+    statusText.textContent = '正在启动爬虫任务，请稍候...';
+    
+    // 发送AJAX请求
+    var formData = new FormData(this);
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        statusDiv.style.display = 'none';
+        resultDiv.style.display = 'block';
+        
+        if (data.code === 0) {
+            resultText.textContent = data.msg;
+            resultDiv.className = 'alert alert-success';
+        } else {
+            resultText.textContent = data.msg;
+            resultDiv.className = 'alert alert-danger';
+        }
+        
+        // 恢复按钮
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-play"></i> 开始爬取';
+    })
+    .catch(error => {
+        statusDiv.style.display = 'none';
+        resultDiv.style.display = 'block';
+        resultText.textContent = '请求失败: ' + error.message;
+        resultDiv.className = 'alert alert-danger';
+        
+        // 恢复按钮
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-play"></i> 开始爬取';
+    });
+});
+</script>
+{% endblock %}

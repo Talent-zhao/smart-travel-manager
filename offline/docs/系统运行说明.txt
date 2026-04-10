@@ -1,0 +1,20 @@
+1、打开pycharm,
+倒三角里面选择 travel_manager
+然后再点击左上角的绿色按钮即可启动系统，
+然后点击左下角的蓝色链接即可自动打开浏览器进入用户界面
+或者在浏览器输入
+127.0.0.1:8000
+
+2、后台管理界面
+浏览器输入
+127.0.0.1:8000/xadmin/
+账号 root
+密码 travel-root
+
+3、如果mysql连接不起来
+双击 mysql_start.bat
+
+4、说明文档与离线脚本（均在 offline/ 下，详见 offline/README.md）
+   - 文档：offline/docs/ 下 开发文档.md、算法说明.md、TESSERACT安装.md、爬虫依赖安装.md 等
+   - 检查 travel.txt 结构（不写库）：在项目根目录执行  python offline/scripts/import_all_data.py check
+   - 命令行全量导入 travel.txt：python offline/scripts/import_all_data.py

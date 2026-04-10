@@ -1,0 +1,380 @@
+{% extends 'base.html' %}
+{% load myfilter %}
+{% block style %}
+  <link type="text/css" rel="stylesheet" href="/static/css/slideShow.css"/>
+  <link type="text/css" rel="stylesheet" href="/static/css/swiper.min.css"/>
+  <style>
+    .recommend-feedback {
+      text-align: left;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px dashed #bcd4c4;
+      background-color: #eef6ee;
+    }
+    .recommend-feedback-title {
+      margin-right: 8px;
+      font-weight: 600;
+      color: #43875f;
+    }
+    .recommend-feedback input[type="text"] {
+      max-width: 220px;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+    .recommend-label-like,
+    .recommend-label-dislike {
+      display: inline-block;
+      margin-right: 10px;
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      background: #fff;
+      color: #555;
+      vertical-align: middle;
+    }
+    .recommend-label-like input,
+    .recommend-label-dislike input {
+      margin: 0 4px 0 0;
+      vertical-align: middle;
+    }
+    .recommend-label-like.is-active {
+      background: #5cb85c;
+      border-color: #4cae4c;
+      color: #fff;
+      font-weight: 600;
+    }
+    .recommend-label-dislike.is-active {
+      background: #d9534f;
+      border-color: #d43f3a;
+      color: #fff;
+      font-weight: 600;
+    }
+    .recommend-feedback--locked .recommend-label-like,
+    .recommend-feedback--locked .recommend-label-dislike {
+      cursor: default;
+    }
+    .recommend-feedback--liked {
+      border-color: #5cb85c;
+      background-color: #eef6ee;
+    }
+    .recommend-feedback--disliked {
+      border-color: #e0b4b4;
+      background-color: #eef6ee;
+    }
+    .recommend-feedback-note {
+      display: inline-block;
+      margin-left: 10px;
+      font-size: 13px;
+      color: #888;
+    }
+  </style>
+{% endblock %}
+
+{% block head_script %}
+  <script type="text/javascript">
+      var index = 0;
+
+      //效果
+      function ChangeImg() {
+          index++;
+          var img = document.getElementsByClassName("img-slide");
+          var h2 = document.getElementsByClassName("h2-slide");
+          if (index >= img.length - 1) index = 0;
+          for (var i = 0; i < img.length; i++) {
+
+              img[i].style['display'] = 'none';
+              h2[i].style['display'] = 'none';
+          }
+          img[index].style['display'] = 'block';
+          h2[index].style['display'] = 'block';
+      }
+
+      // 上一张点击事件
+      function swiperPrev() {
+          index--;
+          var img = document.getElementsByClassName("img-slide");
+          var h2 = document.getElementsByClassName("h2-slide");
+          if (index < 0) index = img.length - 1;
+          for (var i = 0; i < img.length; i++) {
+              console.log(i)
+              img[i].style['display'] = 'none';
+              h2[i].style['display'] = 'none';
+          }
+          img[index].style['display'] = 'block';
+          h2[index].style['display'] = 'block';
+      }
+
+      // 下一张点击事件
+      function swiperNext() {
+          ChangeImg();
+      }
+
+      //设置定时器，每隔2秒切换一张图片
+      setInterval(ChangeImg, 2000);
+  </script>
+{% endblock %}
+
+{% block right-panel-content %}
+  <div style="margin-bottom: 10px; text-align: center">
+    {% if city_id %}
+      <a href="{% url selected %}?city_id={{ city_id }}" style="color: #5e8e5e;float: left">返回上一级</a>
+    {% else %}
+      <a href="{% url selected %}" style="color: #5e8e5e;float: left">返回上一级</a>
+    {% endif %}
+    <h1 class="text-center" style="color: #43875f;display: inline-block;">{{ title }}</h1>
+  </div>
+
+  {% if  not sights %}
+    <h3 class="text-center">对不起没有景点</h3>
+  {% endif %}
+
+  {# 轮播图#}
+  <div style="text-align: center;">
+    <div class="imgBox">
+      {% for carousel in city_carousels %}
+        <div class="swiper-container swiper-container-horizontal">
+          <h2 class="h2-slide"
+              style="display:  {% if forloop.counter == 1 %}block{% else %}none{% endif %}"></h2>
+
+          <div class="swiper-pagination swiper-pagination-bullets">
+            {% for _ in city_carousels %}
+              {% if forloop.parentloop.counter == forloop.counter %}
+                <span class="swiper-pagination-bullet swiper-pagination-bullet-active"></span>
+              {% else %}
+                <span class="swiper-pagination-bullet"></span>
+              {% endif %}
+
+            {% endfor %}
+
+
+          </div>
+          <div class="swiper-button-prev" onclick="swiperPrev()"></div>
+          {#                    <a href="{% url 'sort_fitness' %}?selected={{ selected }}">#}
+          <img class="img-slide img{{ forloop.counter }}"
+               {% if forloop.counter == 1 %}style="display:block"{% else %}style="display:none"{% endif %}
+               src="{% if carousel.photo %}/{{ carousel.photo }}{% else %}/static/image/no_image.svg{% endif %}"
+               alt="轮播图"
+               title="轮播图"
+               onerror="this.onerror=null;this.src='/static/image/no_image.svg';"
+          />
+          {#                    </a>#}
+          <div class="swiper-button-next" onclick="swiperNext()"></div>
+
+        </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+
+
+  {% for sight in sights %}
+
+    <div class="container-fluid"
+         style="border-bottom:1px dashed #000; border-left:1px dashed #000;text-align: center;padding-bottom: 10px;padding-top: 10px">
+      <div class="row clearfix">
+        <div class="col-md-2 column" style="width: 20%;color: #5e8e5e;">
+          <a href="{% url 'sight' sight.id %}?selected={{ selected }}{% if city_id %}&city_id={{ city_id }}{% endif %}">
+            <img class="img-thumbnail sight-image"
+                 alt="景点图片"
+                 title="景点图片"
+                 src="{% if sight.cover_pic %}/{{ sight.cover_pic }}{% else %}/static/image/no_image.svg{% endif %}"
+                 width="180"
+                 height="440"
+                 onerror="this.onerror=null;this.src='/static/image/no_image.svg';"
+            />
+          </a>
+
+
+          <p style="padding-top: 10px">
+            <strong>
+              {{ sight.rank }}
+            </strong>
+          </p>
+        </div>
+
+        <div class="col-md-7 column" style="color: #5e8e5e;width: 80%;">
+          <h3 >
+            {% if city_id %}
+              <a href="{% url 'sight' sight.id %}?selected={{ selected }}&city_id={{ city_id }}">{{ sight.name }}</a>
+            {% else %}
+              <a href="{% url 'sight' sight.id %}?selected={{ selected }}">{{ sight.name }}</a>
+            {% endif %}
+
+          </h3>
+          <p>{{ sight.detail|safe | slice:":256" }}......</p>
+
+
+          {% if is_recommend %}
+            {% with likev=recommend_fb_like|dict_get:sight.id %}
+            {% with rsn=recommend_fb_reason|dict_get:sight.id %}
+            <div id="radioDiv_{{ sight.id }}"
+                 class="recommend-feedback{% if likev == 1 %} recommend-feedback--locked recommend-feedback--liked{% elif likev == 0 %} recommend-feedback--locked recommend-feedback--disliked{% endif %}"
+                 data-sight-id="{{ sight.id }}">
+              <span class="recommend-feedback-title">是否喜欢:</span>
+              <input type="text" name="reason" id="reason_{{ sight.id }}" placeholder="请补充原因"
+                     value="{{ rsn|default_if_none:'' }}"
+                     {% if likev == 0 or likev == 1 %}disabled{% endif %}>
+              <label class="recommend-label-like{% if likev == 1 %} is-active{% endif %}">
+                <input type="radio" name="value_{{ sight.id }}" value="{{ sight.id }}_1"
+                       {% if likev == 1 %}checked{% endif %}
+                       {% if likev == 0 or likev == 1 %}disabled{% endif %}
+                       onclick="checkRecommendFeedback(this.value)">喜欢
+              </label>
+              <label class="recommend-label-dislike{% if likev == 0 %} is-active{% endif %}">
+                <input type="radio" name="value_{{ sight.id }}" value="{{ sight.id }}_0"
+                       {% if likev == 0 %}checked{% endif %}
+                       {% if likev == 0 or likev == 1 %}disabled{% endif %}
+                       onclick="checkRecommendFeedback(this.value)">不喜欢
+              </label>
+              {% if likev == 0 or likev == 1 %}
+              <span class="recommend-feedback-note">已反馈（不可修改）</span>
+              {% endif %}
+            </div>
+            {% endwith %}
+            {% endwith %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  <div class="container-fluid">
+    <ul class="pagination" id="pager">
+      <li style="padding-right: 5px">
+        {% if city_id %}
+          <a href="{% url selected %}?city_id={{ city_id }}">返回上一级</a>
+        {% else %}
+          <a href="{% url selected %}">返回上一级</a>
+        {% endif %}
+      </li>
+      {#上一页按钮开始#}
+      {# 如果当前页有上一页#}
+      {% if sights.has_previous %}
+        {#  当前页的上一页按钮正常使用#}
+        <li class="previous"><a
+            href="{{ path }}?page={{ sights.previous_page_number }}&selected={{ selected }}&city_id={{ city_id }}">上一页</a>
+        </li>
+      {% else %}
+        {# 当前页的不存在上一页时,上一页的按钮不可用#}
+        <li class="previous disabled"><a href="#">上一页</a></li>
+      {% endif %}
+      {#上一页按钮结束#}
+      {# 页码开始#}
+      <li class="item active"><a
+          href="{{ path }}?page={{ sights.number }}&selected={{ selected }}&city_id={{ city_id }}">{{ sights.number }}</a>
+      </li>
+      {#页码结束#}
+      {# 下一页按钮开始#}
+      {% if sights.has_next %}
+        <li class="next"><a
+            href="{{ path }}?page={{ sights.next_page_number }}&selected={{ selected }}&city_id={{ city_id }}">下一页</a>
+        </li>
+      {% else %}
+        <li class="next disabled"><a href="#">下一页</a></li>
+      {% endif %}
+      <li class="item"><a href="#">
+        {{ sights.number }}/{{ sights.paginator.num_pages }}</a>
+      </li>
+
+    </ul>
+  </div>
+{% endblock %}
+{% block bottom-js %}
+  <script>
+      var LIKE_RECOMMEND_URL = "{% url 'like_recommend_sight' %}";
+
+      function getCsrfToken() {
+          var el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+          if (el && el.value) {
+              return el.value;
+          }
+          var m = document.cookie.match(/csrftoken=([^;]+)/);
+          return m ? decodeURIComponent(m[1].trim()) : '';
+      }
+
+      function applyRecommendFeedbackUI(sightId, isLike) {
+          var root = document.getElementById('radioDiv_' + sightId);
+          if (!root) return;
+          root.classList.add('recommend-feedback--locked');
+          root.classList.remove('recommend-feedback--liked', 'recommend-feedback--disliked');
+          if (isLike) {
+              root.classList.add('recommend-feedback--liked');
+          } else {
+              root.classList.add('recommend-feedback--disliked');
+          }
+          var textEl = document.getElementById('reason_' + sightId);
+          if (textEl) textEl.disabled = true;
+          var radios = root.querySelectorAll('input[type="radio"]');
+          for (var i = 0; i < radios.length; i++) {
+              radios[i].disabled = true;
+          }
+          var likeLabel = root.querySelector('.recommend-label-like');
+          var dislikeLabel = root.querySelector('.recommend-label-dislike');
+          if (likeLabel) {
+              likeLabel.classList.toggle('is-active', !!isLike);
+          }
+          if (dislikeLabel) {
+              dislikeLabel.classList.toggle('is-active', !isLike);
+          }
+          var want = sightId + '_' + (isLike ? '1' : '0');
+          for (var j = 0; j < radios.length; j++) {
+              radios[j].checked = (radios[j].value === want);
+          }
+          if (!root.querySelector('.recommend-feedback-note')) {
+              var note = document.createElement('span');
+              note.className = 'recommend-feedback-note';
+              note.textContent = '已反馈（不可修改）';
+              root.appendChild(note);
+          }
+      }
+
+      function checkRecommendFeedback(value) {
+          var token = getCsrfToken();
+          if (!token) {
+              alert('无法获取安全校验信息，请刷新页面后重试');
+              return;
+          }
+          var parts = String(value).split('_');
+          var sightId = parts[0];
+          var reasonEl = document.getElementById('reason_' + sightId);
+          var reason = reasonEl ? reasonEl.value : '';
+
+          $.ajax({
+              url: LIKE_RECOMMEND_URL,
+              type: 'POST',
+              data: {'value': value, 'reason': reason},
+              dataType: 'json',
+
+              success: function (res) {
+                  if (res && res.code === 0) {
+                      var liked = (res.is_like === 1 || res.is_like === true);
+                      applyRecommendFeedbackUI(sightId, liked);
+                      if (!res.already) {
+                          if (liked) {
+                              alert('感谢反馈，已记录您的喜欢');
+                          } else {
+                              alert('已为您记录「不喜欢」，将减少类似推荐');
+                          }
+                      }
+                  } else {
+                      alert((res && res.msg) ? res.msg : '提交失败');
+                  }
+              },
+              error: function (xhr) {
+                  if (xhr.status === 403) {
+                      window.location.href = "{% url 'login' %}";
+                      return;
+                  }
+                  alert(xhr.statusText || '网络错误');
+              },
+              beforeSend: function (xhr) {
+                  xhr.setRequestHeader("X-CSRFToken", token);
+              }
+          });
+      }
+
+  </script>
+
+{% endblock %}

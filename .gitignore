@@ -1,0 +1,25 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+
+# Django / 本地
+*.log
+db.sqlite3
+
+# 可选：训练出的模型（若不希望入库可取消下一行注释）
+# randomforest.joblib
+
+# 离线爬虫输出
+offline/data/hotels_qyer_data.json

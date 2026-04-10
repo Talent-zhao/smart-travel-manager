@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+{% load myfilter %}
+{% block style %}
+  <link type="text/css" rel="stylesheet" href="/static/css/slideShow.css"/>
+  <link type="text/css" rel="stylesheet" href="/static/css/swiper.min.css"/>
+{% endblock %}
+
+{% block head_script %}
+  <script type="text/javascript">
+      var index = 0;
+
+      //效果
+      function ChangeImg() {
+          index++;
+          var img = document.getElementsByClassName("img-slide");
+          var h2 = document.getElementsByClassName("h2-slide");
+          if (index >= img.length - 1) index = 0;
+          for (var i = 0; i < img.length; i++) {
+
+              img[i].style['display'] = 'none';
+              h2[i].style['display'] = 'none';
+          }
+          img[index].style['display'] = 'block';
+          h2[index].style['display'] = 'block';
+      }
+
+      // 上一张点击事件
+      function swiperPrev() {
+          index--;
+          var img = document.getElementsByClassName("img-slide");
+          var h2 = document.getElementsByClassName("h2-slide");
+          if (index < 0) index = img.length - 1;
+          for (var i = 0; i < img.length; i++) {
+              console.log(i)
+              img[i].style['display'] = 'none';
+              h2[i].style['display'] = 'none';
+          }
+          img[index].style['display'] = 'block';
+          h2[index].style['display'] = 'block';
+      }
+
+      // 下一张点击事件
+      function swiperNext() {
+          ChangeImg();
+      }
+
+      //设置定时器，每隔2秒切换一张图片
+      setInterval(ChangeImg, 2000);
+  </script>
+{% endblock %}
+
+{% block right-panel-content %}
+  <div style="margin-bottom: 10px; text-align: center">
+    <a href="{% url 'all_city' %}" style="float: left;color: #5e8e5e;background-color: #dbf8cc">返回城市列表</a>
+    <h1 class="text-center" style="color: #74c695;display: inline-block;">{{ title }}</h1>
+  </div>
+
+  {# 轮播图#}
+  {% if city_carousels %}
+  <div style="text-align: center;">
+    <div class="imgBox">
+      {% for carousel in city_carousels %}
+        <div class="swiper-container swiper-container-horizontal">
+          <h2 class="h2-slide" {% if forloop.counter == 1 %}style="display:block"{% else %}style="display:none"{% endif %}></h2>
+
+          <div class="swiper-pagination swiper-pagination-bullets">
+            {% for _ in city_carousels %}
+              {% if forloop.parentloop.counter == forloop.counter %}
+                <span class="swiper-pagination-bullet swiper-pagination-bullet-active"></span>
+              {% else %}
+                <span class="swiper-pagination-bullet"></span>
+              {% endif %}
+
+            {% endfor %}
+
+
+          </div>
+          <div class="swiper-button-prev" onclick="swiperPrev()"></div>
+          {% if forloop.counter == 1 %}
+            <img class="img-slide img{{ forloop.counter }}" style="display:block" src="/{{ carousel.photo|default:'static/image/no_image.svg' }}" alt="轮播图" title="轮播图" onerror="this.onerror=null;this.src='/static/image/no_image.svg';"/>
+          {% else %}
+            <img class="img-slide img{{ forloop.counter }}" style="display:none" src="/{{ carousel.photo|default:'static/image/no_image.svg' }}" alt="轮播图" title="轮播图" onerror="this.onerror=null;this.src='/static/image/no_image.svg';"/>
+          {% endif %}
+          <div class="swiper-button-next" onclick="swiperNext()"></div>
+
+        </div>
+      {% endfor %}
+    </div>
+
+  </div>
+  {% endif %}
+
+  {# 标签页导航 #}
+  <ul class="nav nav-tabs" style="margin-top: 20px; margin-bottom: 20px;">
+    <li role="presentation" {% if category == 'sight' %}class="active"{% endif %}>
+      <a href="?category=sight&city_id={{ city_id }}">景点</a>
+    </li>
+    <li role="presentation" {% if category == 'food' %}class="active"{% endif %}>
+      <a href="?category=food&city_id={{ city_id }}">美食</a>
+    </li>
+    <li role="presentation" {% if category == 'shopping' %}class="active"{% endif %}>
+      <a href="?category=shopping&city_id={{ city_id }}">购物</a>
+    </li>
+    <li role="presentation" {% if category == 'activity' %}class="active"{% endif %}>
+      <a href="?category=activity&city_id={{ city_id }}">活动</a>
+    </li>
+    <li role="presentation" {% if category == 'hotel' %}class="active"{% endif %}>
+      <a href="?category=hotel&city_id={{ city_id }}">酒店-民宿</a>
+    </li>
+  </ul>
+
+  {# 景点内容 #}
+  {% if category == 'sight' %}
+    {% if not sights %}
+      <h3 class="text-center">对不起，该城市暂无景点</h3>
+    {% else %}
+      {% for sight in sights %}
+        <div class="container-fluid"
+             style="border-bottom:1px dashed #000; border-left:1px dashed #000;text-align: center;padding-bottom: 10px;padding-top: 10px">
+          <div class="row clearfix">
+            <div class="col-md-2 column" style="width: 20%">
+              <a href="{% url 'sight' sight.id %}?selected={{ selected }}&city_id={{ city_id }}">
+                <img class="img-thumbnail sight-image"
+                     alt="景点图片"
+                     title="景点图片"
+                     src="{% if sight.cover_pic %}/{{ sight.cover_pic }}{% else %}/static/image/no_image.svg{% endif %}"
+                     width="180"
+                     height="440"
+                     onerror="this.onerror=null;this.src='/static/image/no_image.svg';"
+                />
+              </a>
+              <p style="padding-top: 10px">
+                <strong>{{ sight.rank }}</strong>
+              </p>
+            </div>
+            <div class="col-md-7 column" style="width: 80%;">
+              <h3>
+                <a href="{% url 'sight' sight.id %}?selected={{ selected }}&city_id={{ city_id }}">{{ sight.name }}</a>
+              </h3>
+              <p>{{ sight.detail|safe | slice:":256" }}......</p>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+      {# 景点分页 #}
+      <div class="container-fluid">
+        <ul class="pagination" id="pager">
+          {% if sights.has_previous %}
+            <li class="previous"><a href="?category=sight&city_id={{ city_id }}&sight_page={{ sights.previous_page_number }}">上一页</a></li>
+          {% else %}
+            <li class="previous disabled"><a href="#">上一页</a></li>
+          {% endif %}
+          <li class="item active"><a href="?category=sight&city_id={{ city_id }}&sight_page={{ sights.number }}">{{ sights.number }}</a></li>
+          {% if sights.has_next %}
+            <li class="next"><a href="?category=sight&city_id={{ city_id }}&sight_page={{ sights.next_page_number }}">下一页</a></li>
+          {% else %}
+            <li class="next disabled"><a href="#">下一页</a></li>
+          {% endif %}
+          <li class="item"><a href="#">{{ sights.number }}/{{ sights.paginator.num_pages }}</a></li>
+        </ul>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {# 美食内容 #}
+  {% if category == 'food' %}
+    {% if not foods %}
+      <h3 class="text-center">对不起，该城市暂无美食</h3>
+    {% else %}
+      {% for food in foods %}
+        <div class="container-fluid"
+             style="border-bottom:1px dashed #000; border-left:1px dashed #000;text-align: center;padding-bottom: 10px;padding-top: 10px">
+          <div class="row clearfix">
+            <div class="col-md-2 column" style="width: 20%;color: #5e8e5e;">
+              <img class="img-thumbnail"
+                   alt="图片"
+                   title="图片"
+                   src="{% if food.cover_pic %}/{{ food.cover_pic }}{% else %}/static/image/no_image.svg{% endif %}"
+                   width="180"
+                   height="440"
+                   onerror="this.onerror=null;this.src='/static/image/no_image.svg';"
+              />
+              {% if food.rank %}
+              <p style="padding-top: 10px">
+                <strong>{{ food.rank }}</strong>
+              </p>
+              {% endif %}
+            </div>
+            <div class="col-md-7 column" style="color: #5e8e5e;width: 80%;">
+              <h3>{{ food.name }}</h3>
+              <p>{{ food.detail|safe | slice:":256" }}{% if food.detail|length > 256 %}......{% endif %}</p>
+              {% if food.tips %}
+                {% for tip in food.tips|to_list %}
+                  <p style="font-size: 14px;margin-bottom: 2px;color: #74c695;">{{ tip }}</p>
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+      {# 美食分页 #}
+      <div class="container-fluid">
+        <ul class="pagination" id="pager">
+          {% if foods.has_previous %}
+            <li class="previous"><a href="?category=food&city_id={{ city_id }}&food_page={{ foods.previous_page_number }}">上一页</a></li>
+          {% else %}
+            <li class="previous disabled"><a href="#">上一页</a></li>
+          {% endif %}
+          <li class="item active"><a href="?category=food&city_id={{ city_id }}&food_page={{ foods.number }}">{{ foods.number }}</a></li>
+          {% if foods.has_next %}
+            <li class="next"><a href="?category=food&city_id={{ city_id }}&food_page={{ foods.next_page_number }}">下一页</a></li>
+          {% else %}
+            <li class="next disabled"><a href="#">下一页</a></li>
+          {% endif %}
+          <li class="item"><a href="#">{{ foods.number }}/{{ foods.paginator.num_pages }}</a></li>
+        </ul>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {# 购物内容 #}
+  {% if category == 'shopping' %}
+    {% if not shoppings %}
+      <h3 class="text-center">对不起，该城市暂无购物信息</h3>
+    {% else %}
+      {% for shopping in shoppings %}
+        <div class="container-fluid"
+             style="border-bottom:1px dashed #000; border-left:1px dashed #000;text-align: center;padding-bottom: 10px;padding-top: 10px">
+          <div class="row clearfix">
+            <div class="col-md-2 column" style="width: 20%;color: #5e8e5e;">
+              <img class="img-thumbnail"
+                   alt="图片"
+                   title="图片"
+                   src="{% if shopping.cover_pic %}/{{ shopping.cover_pic }}{% else %}/static/image/no_image.svg{% endif %}"
+                   width="180"
+                   height="440"
+                   onerror="this.onerror=null;this.src='/static/image/no_image.svg';"
+              />
+              {% if shopping.rank %}
+              <p style="padding-top: 10px">
+                <strong>{{ shopping.rank }}</strong>
+              </p>
+              {% endif %}
+            </div>
+            <div class="col-md-7 column" style="color: #5e8e5e;width: 80%;">
+              <h3>{{ shopping.name }}</h3>
+              <p>{{ shopping.detail|safe | slice:":256" }}{% if shopping.detail|length > 256 %}......{% endif %}</p>
+              {% if shopping.tips %}
+                {% for tip in shopping.tips|to_list %}
+                  <p style="font-size: 14px;margin-bottom: 2px;color: #74c695;">{{ tip }}</p>
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+      {# 购物分页 #}
+      <div class="container-fluid">
+        <ul class="pagination" id="pager">
+          {% if shoppings.has_previous %}
+            <li class="previous"><a href="?category=shopping&city_id={{ city_id }}&shopping_page={{ shoppings.previous_page_number }}">上一页</a></li>
+          {% else %}
+            <li class="previous disabled"><a href="#">上一页</a></li>
+          {% endif %}
+          <li class="item active"><a href="?category=shopping&city_id={{ city_id }}&shopping_page={{ shoppings.number }}">{{ shoppings.number }}</a></li>
+          {% if shoppings.has_next %}
+            <li class="next"><a href="?category=shopping&city_id={{ city_id }}&shopping_page={{ shoppings.next_page_number }}">下一页</a></li>
+          {% else %}
+            <li class="next disabled"><a href="#">下一页</a></li>
+          {% endif %}
+          <li class="item"><a href="#">{{ shoppings.number }}/{{ shoppings.paginator.num_pages }}</a></li>
+        </ul>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {# 活动内容 #}
+  {% if category == 'activity' %}
+    {% if not activities %}
+      <h3 class="text-center">对不起，该城市暂无活动信息</h3>
+    {% else %}
+      {% for activity in activities %}
+        <div class="container-fluid"
+             style="border-bottom:1px dashed #000; border-left:1px dashed #000;text-align: center;padding-bottom: 10px;padding-top: 10px">
+          <div class="row clearfix">
+            <div class="col-md-2 column" style="width: 20%;color: #5e8e5e;">
+              <img class="img-thumbnail"
+                   alt="图片"
+                   title="图片"
+                   src="{% if activity.cover_pic %}/{{ activity.cover_pic }}{% else %}/static/image/no_image.svg{% endif %}"
+                   width="180"
+                   height="440"
+                   onerror="this.onerror=null;this.src='/static/image/no_image.svg';"
+              />
+              {% if activity.rank %}
+              <p style="padding-top: 10px">
+                <strong>{{ activity.rank }}</strong>
+              </p>
+              {% endif %}
+            </div>
+            <div class="col-md-7 column" style="color: #5e8e5e;width: 80%;">
+              <h3>{{ activity.name }}</h3>
+              <p>{{ activity.detail|safe | slice:":256" }}{% if activity.detail|length > 256 %}......{% endif %}</p>
+              {% if activity.tips %}
+                {% for tip in activity.tips|to_list %}
+                  <p style="font-size: 14px;margin-bottom: 2px;color: #74c695;">{{ tip }}</p>
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+      {# 活动分页 #}
+      <div class="container-fluid">
+        <ul class="pagination" id="pager">
+          {% if activities.has_previous %}
+            <li class="previous"><a href="?category=activity&city_id={{ city_id }}&activity_page={{ activities.previous_page_number }}">上一页</a></li>
+          {% else %}
+            <li class="previous disabled"><a href="#">上一页</a></li>
+          {% endif %}
+          <li class="item active"><a href="?category=activity&city_id={{ city_id }}&activity_page={{ activities.number }}">{{ activities.number }}</a></li>
+          {% if activities.has_next %}
+            <li class="next"><a href="?category=activity&city_id={{ city_id }}&activity_page={{ activities.next_page_number }}">下一页</a></li>
+          {% else %}
+            <li class="next disabled"><a href="#">下一页</a></li>
+          {% endif %}
+          <li class="item"><a href="#">{{ activities.number }}/{{ activities.paginator.num_pages }}</a></li>
+        </ul>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {# 酒店内容 #}
+  {% if category == 'hotel' %}
+    {% if not hotels %}
+      <h3 class="text-center">对不起，该城市暂无酒店-民宿信息</h3>
+    {% else %}
+      {% for hotel in hotels %}
+        <div class="container-fluid"
+             style="border-bottom:1px dashed #000; border-left:1px dashed #000;text-align: center;padding-bottom: 10px;padding-top: 10px">
+          <div class="row clearfix">
+            <div class="col-md-2 column" style="width: 20%;color: #5e8e5e;">
+              <img class="img-thumbnail hotel-image"
+                   alt="酒店图片"
+                   title="酒店图片"
+                   src="{% if hotel.cover_pic %}/{{ hotel.cover_pic }}{% else %}/static/image/hotel_default.jpg{% endif %}"
+                   width="180"
+                   height="440"
+                   onerror="this.onerror=null;this.src='/static/image/hotel_default.jpg';"
+              />
+              <p style="padding-top: 10px">
+                <strong>
+                  <span style="margin-right: 2px">类型: </span>
+                  {{ hotel.hotel_type|default:"酒店" }}
+                </strong>
+              </p>
+              {% if hotel.price %}
+              <p>
+                <strong>
+                  <span style="margin-right: 2px">价格: </span>
+                  {{ hotel.price }}
+                </strong>
+              </p>
+              {% endif %}
+            </div>
+            <div class="col-md-7 column" style="color: #5e8e5e;width: 80%;">
+              <h3>
+                <a href="{% url 'book_hotel' hotel.id %}">{{ hotel.name }}</a>
+              </h3>
+              <p>{{ hotel.detail|safe | slice:":256" }}{% if hotel.detail|length > 256 %}......{% endif %}</p>
+              {% if hotel.address %}
+              <p><strong>地址：</strong>{{ hotel.address }}</p>
+              {% endif %}
+              {% if hotel.phone %}
+              <p><strong>电话：</strong>{{ hotel.phone }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+      {# 酒店分页 #}
+      <div class="container-fluid">
+        <ul class="pagination" id="pager">
+          {% if hotels.has_previous %}
+            <li class="previous"><a href="?category=hotel&city_id={{ city_id }}&hotel_page={{ hotels.previous_page_number }}">上一页</a></li>
+          {% else %}
+            <li class="previous disabled"><a href="#">上一页</a></li>
+          {% endif %}
+          <li class="item active"><a href="?category=hotel&city_id={{ city_id }}&hotel_page={{ hotels.number }}">{{ hotels.number }}</a></li>
+          {% if hotels.has_next %}
+            <li class="next"><a href="?category=hotel&city_id={{ city_id }}&hotel_page={{ hotels.next_page_number }}">下一页</a></li>
+          {% else %}
+            <li class="next disabled"><a href="#">下一页</a></li>
+          {% endif %}
+          <li class="item"><a href="#">{{ hotels.number }}/{{ hotels.paginator.num_pages }}</a></li>
+        </ul>
+      </div>
+    {% endif %}
+  {% endif %}
+
+{% endblock %}

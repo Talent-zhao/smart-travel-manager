@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% block style %}
+  <link type="text/css" rel="stylesheet" href="/static/css/slideShow.css"/>
+  <link type="text/css" rel="stylesheet" href="/static/css/swiper.min.css"/>
+{% endblock %}
+
+{% block head_script %}
+  <script type="text/javascript">
+      var index = 0;
+
+      //效果
+      function ChangeImg() {
+          index++;
+          var img = document.getElementsByClassName("img-slide");
+          var h2 = document.getElementsByClassName("h2-slide");
+          if (index >= img.length - 1) index = 0;
+          for (var i = 0; i < img.length; i++) {
+
+              img[i].style['display'] = 'none';
+              h2[i].style['display'] = 'none';
+          }
+          img[index].style['display'] = 'block';
+          h2[index].style['display'] = 'block';
+      }
+
+      // 上一张点击事件
+      function swiperPrev() {
+          index--;
+          var img = document.getElementsByClassName("img-slide");
+          var h2 = document.getElementsByClassName("h2-slide");
+          if (index < 0) index = img.length - 1;
+          for (var i = 0; i < img.length; i++) {
+              console.log(i)
+              img[i].style['display'] = 'none';
+              h2[i].style['display'] = 'none';
+          }
+          img[index].style['display'] = 'block';
+          h2[index].style['display'] = 'block';
+      }
+
+      // 下一张点击事件
+      function swiperNext() {
+          ChangeImg();
+      }
+
+      //设置定时器，每隔2秒切换一张图片
+      setInterval(ChangeImg, 2000);
+  </script>
+{% endblock %}
+
+{% block right-panel-content %}
+  <div style="margin-bottom: 10px; text-align: center">
+    <a href="{% url selected %}{% if city_id %}?city_id={{ city_id }}{% endif %}"
+       style="color: #5e8e5e;float: left">返回上一级</a>
+    <h1 class="text-center" style="color: #43875f;display: inline-block;">{{ title }}</h1>
+  </div>
+
+  {% if  not hotels %}
+    <h3 class="text-center">对不起没有酒店-民宿</h3>
+  {% endif %}
+
+  {# 轮播图#}
+  <div style="text-align: center;">
+    <div class="imgBox">
+      {% for carousel in city_carousels %}
+        <div class="swiper-container swiper-container-horizontal">
+          <h2 class="h2-slide" {% if forloop.counter == 1 %}style="display:block"{% else %}style="display:none"{% endif %}></h2>
+
+          <div class="swiper-pagination swiper-pagination-bullets">
+            {% for _ in city_carousels %}
+              {% if forloop.parentloop.counter == forloop.counter %}
+                <span class="swiper-pagination-bullet swiper-pagination-bullet-active"></span>
+              {% else %}
+                <span class="swiper-pagination-bullet"></span>
+              {% endif %}
+
+            {% endfor %}
+
+
+          </div>
+          <div class="swiper-button-prev" onclick="swiperPrev()"></div>
+          <img class="img-slide img{{ forloop.counter }}"
+               {% if forloop.counter == 1 %}style="display:block"{% else %}style="display:none"{% endif %}
+               src="{% if carousel.photo %}/{{ carousel.photo }}{% else %}/static/image/no_image.svg{% endif %}"
+               alt="轮播图"
+               title="轮播图"
+               onerror="this.onerror=null;this.src='/static/image/no_image.svg';"
+          />
+          <div class="swiper-button-next" onclick="swiperNext()"></div>
+
+        </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+
+
+  {% for hotel in hotels %}
+
+    <div class="container-fluid"
+         style="border-bottom:1px dashed #000; border-left:1px dashed #000;text-align: center;padding-bottom: 10px;padding-top: 10px">
+      <div class="row clearfix">
+        <div class="col-md-2 column" style="width: 20%;color: #5e8e5e;">
+          <a href="{% url 'all_hotel' %}?selected={{ selected }}{% if city_id %}&city_id={{ city_id }}{% endif %}">
+            <img class="img-thumbnail hotel-image"
+                 alt="酒店图片"
+                 title="酒店图片"
+                 src="{% if hotel.cover_pic %}/{{ hotel.cover_pic }}{% else %}/static/image/hotel_default.jpg{% endif %}"
+                 width="140"
+                 height="200"
+                 onerror="this.onerror=null;this.src='/static/image/hotel_default.jpg';"
+            />
+          </a>
+
+
+          <p style="padding-top: 10px">
+            <strong>
+              <span style="margin-right: 2px">类型: </span>
+              {{ hotel.hotel_type|default:"酒店" }}
+            </strong>
+          </p>
+          {% if hotel.price %}
+          <p>
+            <strong>
+              <span style="margin-right: 2px">价格: </span>
+              {{ hotel.price }}
+            </strong>
+          </p>
+          {% endif %}
+        </div>
+
+        <div class="col-md-7 column" style="color: #5e8e5e;width: 80%;">
+          <h3>
+            <a href="{% url 'book_hotel' hotel.id %}">{{ hotel.name }}</a>
+          </h3>
+          <p>{{ hotel.detail|safe | slice:":256" }}{% if hotel.detail|length > 256 %}......{% endif %}</p>
+          
+          {% if hotel.address %}
+          <p><strong>地址：</strong>{{ hotel.address }}</p>
+          {% endif %}
+          
+          {% if hotel.phone %}
+          <p><strong>电话：</strong>{{ hotel.phone }}</p>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  <div class="container-fluid">
+    <ul class="pagination" id="pager">
+      <li style="padding-right: 5px">
+        {% if city_id %}
+          <a href="{% url selected %}?city_id={{ city_id }}">返回上一级</a>
+        {% else %}
+          <a href="{% url selected %}">返回上一级</a>
+        {% endif %}
+      </li>
+      {#上一页按钮开始#}
+      {# 如果当前页有上一页#}
+      {% if hotels.has_previous %}
+        {#  当前页的上一页按钮正常使用#}
+        <li class="previous"><a
+            href="?page={{ hotels.previous_page_number }}&selected={{ selected }}{% if city_id %}&city_id={{ city_id }}{% endif %}">上一页</a>
+        </li>
+      {% else %}
+        {# 当前页的不存在上一页时,上一页的按钮不可用#}
+        <li class="previous disabled"><a href="#">上一页</a></li>
+      {% endif %}
+      {#上一页按钮结束#}
+      {# 页码开始#}
+      <li class="item active"><a
+          href="?page={{ hotels.number }}&selected={{ selected }}{% if city_id %}&city_id={{ city_id }}{% endif %}">{{ hotels.number }}</a>
+      </li>
+      {#页码结束#}
+      {# 下一页按钮开始#}
+      {% if hotels.has_next %}
+        <li class="next"><a
+            href="?page={{ hotels.next_page_number }}&selected={{ selected }}{% if city_id %}&city_id={{ city_id }}{% endif %}">下一页</a>
+        </li>
+      {% else %}
+        <li class="next disabled"><a href="#">下一页</a></li>
+      {% endif %}
+      <li class="item"><a href="#">
+        {{ hotels.number }}/{{ hotels.paginator.num_pages }}</a>
+      </li>
+
+    </ul>
+  </div>
+{% endblock %}
+

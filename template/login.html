@@ -1,0 +1,267 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <link rel="icon" href="/static/image/tral.png">
+  <title>旅游景点推荐系统</title>
+  {% block style %}
+  {% endblock %}
+  <!-- Bootstrap core CSS -->
+  <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom styles for this template -->
+  <link href="/static/css/dashboard.css" rel="stylesheet">
+  <link href="/static/css/custom.css" rel="stylesheet">
+  {% block extrastyle %}
+  {% endblock %}
+
+  <script src="/static/js/html5shiv.min.js"></script>
+  <script src="/static/js/respond.min.js"></script>
+  <script src="/static/js/jquery-2.1.1.min.js"></script>
+  <script src="/static/js/jquery.min.js"></script>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+
+    }
+
+    .col-md-4 {
+        display: flex;
+        border-radius: 20px;
+        flex-direction: column;
+        margin-top: 0;
+        margin-left: 100px;
+        padding-top: 0;
+        width: 400px;
+        min-height: 300px;
+        backdrop-filter: blur(10px);
+        border: grey solid 3px;
+        animation-name: shake;
+        animation-duration: 1s;
+        background: #FFFFFF;
+        box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
+    }
+
+    #faceLoginDiv {
+        display: none;
+        margin-top: 10px;
+    }
+
+    #cameraDiv {
+        margin-top: 10px;
+        text-align: center;
+    }
+
+    #video, #canvas {
+        width: 300px;
+        height: 200px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+
+</style>
+
+<body style="background: #ffffff url({% static 'image/background.jpg' %});background-size:100% 100%;padding-top: 10px">
+<div class="col-md-4 col-md-offset-4">
+  <h3 style="text-align: center;color: #4CAF50;">
+    <a href="{% url 'index' %}">旅游管理系统登录</a>
+  </h3>
+  {% if error %}
+    <p style="color: red">{{ error }}</p>
+  {% endif %}
+
+  <div style="text-align: center; margin-bottom: 10px;">
+    <button type="button" id="switchToPassword" onclick="switchLoginMode('password')"
+            style="background: #4CAF50;color: #FFFFFF;width: 100px;height: 30px;border-radius: 5px;margin-right: 10px;">
+      账号登录
+    </button>
+    <button type="button" id="switchToFace" onclick="switchLoginMode('face')"
+            style="background: #4CAF50;color: #FFFFFF;width: 100px;height: 30px;border-radius: 5px;">
+      人脸登录
+    </button>
+  </div>
+
+  <!-- 账号密码登录表单 -->
+  <div id="passwordLoginDiv">
+    <form action="{% url 'login_face' %}" method='post' autocomplete="on">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="form-group">
+          {{ field.label_tag }}
+          {{ field.errors }}
+          {{ field }}
+        </div>
+      {% endfor %}
+      <div style="text-align: center">
+        <button type="reset"
+                style="background: #4CAF50;color: #FFFFFF;width: 50px;height: 30px;margin-left: -10px;border-radius: 5px">
+          取消
+        </button>
+        <button type="submit"
+                style="background: #4CAF50;color: #FFFFFF;width: 50px;height: 30px;margin-left: 50px;border-radius: 5px">
+          登录
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- 人脸识别登录 -->
+  <div id="faceLoginDiv">
+    <div class="form-group">
+      <label>人脸识别登录</label>
+      <div id="cameraBtn" style="text-align: center; margin-bottom: 10px;">
+        <input type="button" id="init" onclick="captureInit()" value="开启摄像头"
+               style="background: #4CAF50;color: #FFFFFF;width: 90px;height: 30px;margin: 5px;border-radius: 5px"/>
+        <input type="button" id="capture" onclick="capture_s()" value="拍照"
+               style="background: #4CAF50;color: #FFFFFF;width: 90px;height: 30px;margin: 5px;border-radius: 5px"/>
+        <input type="button" id="queren" onclick="queren_s()" value="确定登录"
+               style="background: #4CAF50;color: #FFFFFF;width: 90px;height: 30px;margin: 5px;border-radius: 5px"/>
+      </div>
+      <div id="cameraDiv">
+        <video id="video" autoplay style="display: none;"></video>
+        <canvas id="canvas" style="display: none;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <p style="text-align: center;margin-top: 10px;color: #b3b3b3;">未有账号？
+    <a href="{% url 'register' %}" style="color: #4CAF50;">点我注册</a>
+  </p>
+</div>
+
+</body>
+
+<script type="text/javascript">
+    var video = document.getElementById("video");
+    var canvas = document.getElementById("canvas");
+    var context = canvas.getContext("2d");
+    var imgWidth = 300;
+    var imgHeight = 200;
+    var captureState = 0; // 0未开启,1已开启,2已拍照
+    var currentMode = 'password'; // 当前登录模式
+
+    // 切换登录模式
+    function switchLoginMode(mode) {
+        currentMode = mode;
+        if (mode === 'password') {
+            document.getElementById('passwordLoginDiv').style.display = 'block';
+            document.getElementById('faceLoginDiv').style.display = 'none';
+            document.getElementById('switchToPassword').style.background = '#4CAF50';
+            document.getElementById('switchToFace').style.background = '#cccccc';
+        } else {
+            document.getElementById('passwordLoginDiv').style.display = 'none';
+            document.getElementById('faceLoginDiv').style.display = 'block';
+            document.getElementById('switchToPassword').style.background = '#cccccc';
+            document.getElementById('switchToFace').style.background = '#4CAF50';
+        }
+    }
+
+    // 初始化显示密码登录
+    switchLoginMode('password');
+
+    function getUserMedia(constrains, success, error) {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia(constrains).then(success).catch(error);
+        } else if (navigator.webkitGetUserMedia) {
+            navigator.webkitGetUserMedia(constrains).then(success).catch(error);
+        } else if (navigator.mozGetUserMedia) {
+            navigator.mozGetUserMedia(constrains).then(success).catch(error);
+        } else if (navigator.getUserMedia) {
+            navigator.getUserMedia(constrains).then(success).catch(error);
+        } else {
+            alert("不支持的浏览器");
+        }
+    }
+
+    function success(stream) {
+        var CompatibleURL = window.URL || window.webkitURL;
+        try {
+            video.srcObject = stream;
+        } catch (e) {
+            video.src = CompatibleURL.createObjectURL(stream);
+        }
+        video.play();
+        video.style.display = 'block';
+    }
+
+    function error(err) {
+        alert("访问用户媒体设备失败: " + err.name + " " + err.message);
+    }
+
+    function captureInit() {
+        if ((navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia) {
+            getUserMedia({video: {width: imgWidth, height: imgHeight}}, success, error);
+            if (captureState === 0) {
+                captureState = 1;
+            }
+        } else {
+            captureState = 0;
+            alert("你的浏览器不支持访问用户媒体设备或访问地址不是https开头");
+        }
+    }
+
+    function capture_s() {
+        if (captureState === 0) {
+            alert("请先开启摄像头");
+            return;
+        }
+        canvas.width = imgWidth;
+        canvas.height = imgHeight;
+        context.drawImage(video, 0, 0, imgWidth, imgHeight);
+        canvas.style.display = 'block';
+        video.style.display = 'none';
+        captureState = 2;
+    }
+
+    function queren_s() {
+        if (captureState !== 2) {
+            alert("请先开启摄像头并拍照");
+            return;
+        }
+        var mycanvas1 = document.getElementById('canvas');
+        mycanvas1.toBlob(blob => {
+            const formData = new FormData();
+            formData.append('icon', blob, 'photo.jpg');
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            formData.append('type', 'face');
+            $.ajax({
+                url: '{% url 'login_face' %}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: (data) => {
+                    if (data.code === 1) {
+                        alert(data.msg);
+                    } else if (data.code === 2) {
+                        alert(data.msg);
+                        window.location.href = '/all_city/';
+                    }
+                },
+                error: () => {
+                    alert('登录失败，请重试');
+                },
+                beforeSend: function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                }
+            });
+        }, 'image/jpeg', 0.8);
+    }
+</script>
+
+</html>

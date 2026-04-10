@@ -1,0 +1,873 @@
+{% extends "xadmin/base_site.html" %}
+{% load i18n xadmin_tags %}
+
+{% block breadcrumbs %}
+<ul class="breadcrumb">
+  <li><a href="{% url 'xadmin:index' %}">{% trans "Home" %}</a></li>
+  <li class="active">算法管理（人脸识别实验）</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<style>
+@media (min-width: 992px) {
+  .algo-twin-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+  }
+  .algo-twin-row > [class*='col-'] {
+    display: flex;
+    flex-direction: column;
+  }
+  .algo-twin-row > [class*='col-'] > .panel {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    margin-bottom: 0;
+  }
+  .algo-twin-row .panel > .panel-body {
+    flex: 1 1 auto;
+  }
+}
+.algo-twin-row > [class*='col-'] > .panel {
+  margin-bottom: 15px;
+}
+@media (min-width: 992px) {
+  .algo-twin-row > [class*='col-'] > .panel {
+    margin-bottom: 0;
+  }
+}
+.cnn-field-row {
+  margin-left: -6px;
+  margin-right: -6px;
+}
+.cnn-field-row > [class*='col-'] {
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.nb-field-box {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  column-gap: 2ch;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 6px 10px;
+  background: #fafafa;
+}
+.nb-field-box .form-control {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+  height: 30px;
+  padding: 4px 8px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+/* 宽度紧贴数字，右缘与「允许范围」之间仅保留 gap */
+.nb-field-box .form-control[name="pca_n_components"] {
+  width: 5.5rem;
+  min-width: 5rem;
+}
+.nb-field-box .form-control[name="test_size"] {
+  width: 5rem;
+  min-width: 4.5rem;
+}
+.nb-field-box .form-control[name="random_state"] {
+  width: 6.25rem;
+  min-width: 5.75rem;
+}
+.nb-field-box .form-control[name="var_smoothing"] {
+  width: 7rem;
+  min-width: 6.25rem;
+}
+.nb-field-box .nb-range-inline {
+  font-size: 11px;
+  color: #555;
+  line-height: 1.35;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: 0;
+  text-align: right;
+  user-select: none;
+  pointer-events: none;
+}
+.cnn-field-box {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  column-gap: 2ch;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px 10px;
+  background: #fafafa;
+  margin-top: 2px;
+}
+.cnn-field-box .form-control.input-sm {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+  height: 30px;
+  padding: 4px 6px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+.cnn-field-box .form-control.input-sm[name="epochs"] {
+  width: 3.5rem;
+  min-width: 3rem;
+}
+.cnn-field-box .form-control.input-sm[name="batch_size"] {
+  width: 5rem;
+  min-width: 4.5rem;
+}
+.cnn-field-box .form-control.input-sm[name="lr"] {
+  width: 5.25rem;
+  min-width: 4.75rem;
+}
+.cnn-field-box .form-control.input-sm[name="weight_decay"] {
+  width: 6.75rem;
+  min-width: 6.25rem;
+}
+.cnn-field-box .form-control.input-sm[name="dropout_fc1"],
+.cnn-field-box .form-control.input-sm[name="dropout_fc2"] {
+  width: 4.5rem;
+  min-width: 4rem;
+}
+.cnn-field-box .form-control.input-sm[name="test_size"] {
+  width: 3.5rem;
+  min-width: 3rem;
+}
+.cnn-field-box .form-control.input-sm[name="random_state"] {
+  width: 4.25rem;
+  min-width: 3.75rem;
+}
+.cnn-field-box .cnn-range-inline {
+  font-size: 10px;
+  color: #555;
+  line-height: 1.35;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: 0;
+  text-align: right;
+  user-select: none;
+  pointer-events: none;
+}
+</style>
+<div class="container-fluid" style="margin: 16px;">
+  <div class="clearfix" style="margin-bottom: 12px;">
+    <a href="{% url 'xadmin:index' %}" class="btn btn-default">
+      <i class="fa fa-arrow-left"></i> {% trans "返回后台首页" %}
+    </a>
+    <a href="/xadmin/face_algorithm_history/" class="btn btn-info" style="margin-left:6px;">
+      <i class="fa fa-history"></i> 实验历史
+    </a>
+  </div>
+  <div class="alert alert-info">
+    <strong>说明</strong>：使用本地已下载的 Olivetti Faces 数据集训练两类模型（与前台 <code>face_auth</code> 所用用户头像特征<strong>无标签、无向量空间对应关系</strong>，仅供课程/报告中的算法对比实验）。
+    参数超出范围时将由服务端<strong>自动截断</strong>到合法区间。
+    <br/><strong>CNN</strong>：训练在<strong>独立 Python 子进程</strong>中执行（与网站进程分离，避免 PyTorch 拖垮 runserver）。
+    提交成功后请<strong>刷新状态</strong>或等待自动轮询；排错请看 <code>offline/data/face_models/cnn_worker.log</code>。
+    <br/><strong>人脸登录识别</strong>：前台 <code>face_auth</code> 比对由后台<strong>识别策略槽</strong>决定走
+    <strong>朴素贝叶斯（PCA+GaussianNB）</strong> 或 <strong>CNN（PyTorch）</strong> 对应路由；与下方实验训练模块并列维护，便于对照实验指标与线上策略。
+    Olivetti 数据集仍仅用于本页的离线训练与指标对比。
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading"><i class="fa fa-random"></i> 前台识别算法切换</div>
+    <div class="panel-body">
+      <p class="text-muted small" style="margin-bottom:10px;">
+        切换后，人脸登录、注册特征抽取将按所选策略经闸道路由；策略号持久化在
+        <code>offline/data/face_models/.vz_s</code>。
+      </p>
+      <div class="btn-group" role="group" style="margin-bottom:10px;">
+        <button type="button" class="btn btn-default" id="btn-lane-nb" data-login-lane="0">
+          <i class="fa fa-calculator"></i> 使用朴素贝叶斯识别
+        </button>
+        <button type="button" class="btn btn-default" id="btn-lane-cnn" data-login-lane="1">
+          <i class="fa fa-sitemap"></i> 使用 CNN 识别
+        </button>
+      </div>
+      <p style="margin:0;font-size:13px;">
+        当前识别策略：<strong id="login-lane-label">{{ login_lane_label }}</strong>
+      </p>
+      <p id="login-lane-msg" class="small text-success" style="margin:8px 0 0 0;display:none;"></p>
+      <form id="form-login-lane" style="display:none;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="set_login_lane"/>
+        <input type="hidden" name="lane" id="login-lane-input" value="{{ login_lane }}"/>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel panel-warning">
+    <div class="panel-heading clearfix">
+      <span><i class="fa fa-tasks"></i> CNN 后台任务状态</span>
+      <button type="button" class="btn btn-default btn-sm pull-right" id="btn-refresh-cnn-status">
+        <i class="fa fa-refresh"></i> 刷新状态与对比表
+      </button>
+    </div>
+    <div class="panel-body" style="padding-top: 10px;padding-bottom: 10px;">
+      <p id="cnn-status-text" style="margin:0;">
+        <strong>{{ cnn_job.state }}</strong> — {{ cnn_job.message }}
+        <span class="text-muted">({{ cnn_job.updated_at }})</span>
+      </p>
+      {% if cnn_job.detail and cnn_job.detail.pid %}
+      <p class="text-muted small" style="margin:8px 0 0 0;">子进程 PID：<code>{{ cnn_job.detail.pid }}</code>
+        {% if cnn_job.detail.started_at %}（启动时间 {{ cnn_job.detail.started_at }}）{% endif %}</p>
+      {% endif %}
+      <p class="text-muted small" style="margin:8px 0 0 0;margin-bottom:0;">实时进度与日志请在右侧「CNN（PyTorch）」中点击「训练详情」查看；亦可在此「刷新状态」同步对比表。</p>
+    </div>
+  </div>
+
+  <div class="row algo-twin-row">
+    <div class="col-md-6">
+      <div class="panel panel-primary">
+        <div class="panel-heading"><i class="fa fa-calculator"></i> 朴素贝叶斯（PCA + GaussianNB）</div>
+        <div class="panel-body">
+          <form id="form-nb" class="form-horizontal">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="train_nb"/>
+            <div class="form-group">
+              <label>PCA 主成分数</label>
+              {% with L=nb_limits %}
+              <div class="nb-field-box">
+                <input class="form-control" type="number" name="pca_n_components" value="150"
+                       min="{{ L.pca_n_components.0 }}" max="{{ L.pca_n_components.1 }}" step="1"/>
+                <span class="nb-range-inline" aria-hidden="true">允许范围：{{ L.pca_n_components.0 }}–{{ L.pca_n_components.1 }}</span>
+              </div>
+              {% endwith %}
+            </div>
+            <div class="form-group">
+              <label>测试集占比 test_size</label>
+              {% with L=nb_limits %}
+              <div class="nb-field-box">
+                <input class="form-control" type="number" name="test_size" value="0.25"
+                       min="{{ L.test_size.0 }}" max="{{ L.test_size.1 }}" step="0.01"/>
+                <span class="nb-range-inline" aria-hidden="true">允许范围：{{ L.test_size.0 }}–{{ L.test_size.1 }}</span>
+              </div>
+              {% endwith %}
+            </div>
+            <div class="form-group">
+              <label>随机种子 random_state</label>
+              {% with L=nb_limits %}
+              <div class="nb-field-box">
+                <input class="form-control" type="number" name="random_state" value="42"
+                       min="{{ L.random_state.0 }}" max="{{ L.random_state.1 }}"/>
+                <span class="nb-range-inline" aria-hidden="true">允许范围：{{ L.random_state.0 }}–{{ L.random_state.1 }}（整数）</span>
+              </div>
+              {% endwith %}
+            </div>
+            <div class="form-group">
+              <label>GaussianNB var_smoothing</label>
+              {% with L=nb_limits %}
+              <div class="nb-field-box">
+                <input class="form-control" type="text" name="var_smoothing" value="1e-9" autocomplete="off"/>
+                <span class="nb-range-inline" aria-hidden="true">允许范围：{{ L.var_smoothing.0 }}–{{ L.var_smoothing.1 }}</span>
+              </div>
+              {% endwith %}
+            </div>
+            <button type="submit" class="btn btn-primary" id="btn-nb"><i class="fa fa-play"></i> 开始训练</button>
+          </form>
+          <div id="msg-nb" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="panel panel-success">
+        <div class="panel-heading"><i class="fa fa-sitemap"></i> CNN（PyTorch）</div>
+        <div class="panel-body">
+          <form id="form-cnn" class="form-horizontal">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="train_cnn"/>
+            <div class="form-group" style="margin-bottom:10px;">
+              <div class="row cnn-field-row">
+                <div class="col-xs-6">
+                  <label class="small" style="margin-bottom:2px;">训练轮数 epochs</label>
+                  {% with L=cnn_limits %}
+                  <div class="cnn-field-box">
+                    <input class="form-control input-sm" type="number" name="epochs" value="80"
+                           min="{{ L.epochs.0 }}" max="{{ L.epochs.1 }}"/>
+                    <span class="cnn-range-inline" aria-hidden="true">允许范围：{{ L.epochs.0 }}–{{ L.epochs.1 }}</span>
+                  </div>
+                  {% endwith %}
+                </div>
+                <div class="col-xs-6">
+                  <label class="small" style="margin-bottom:2px;">批大小 batch_size</label>
+                  {% with L=cnn_limits %}
+                  <div class="cnn-field-box">
+                    <input class="form-control input-sm" type="number" name="batch_size" value="32"
+                           min="{{ L.batch_size.0 }}" max="{{ L.batch_size.1 }}"/>
+                    <span class="cnn-range-inline" aria-hidden="true">允许范围：{{ L.batch_size.0 }}–{{ L.batch_size.1 }}</span>
+                  </div>
+                  {% endwith %}
+                </div>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <div class="row cnn-field-row">
+                <div class="col-xs-6">
+                  <label class="small" style="margin-bottom:2px;">学习率 lr</label>
+                  {% with L=cnn_limits %}
+                  <div class="cnn-field-box">
+                    <input class="form-control input-sm" type="number" name="lr" value="0.001"
+                           min="{{ L.lr.0 }}" max="{{ L.lr.1 }}" step="0.00001"/>
+                    <span class="cnn-range-inline" aria-hidden="true">允许范围：{{ L.lr.0 }}–{{ L.lr.1 }}</span>
+                  </div>
+                  {% endwith %}
+                </div>
+                <div class="col-xs-6">
+                  <label class="small" style="margin-bottom:2px;">权重衰减 weight_decay</label>
+                  {% with L=cnn_limits %}
+                  <div class="cnn-field-box">
+                    <input class="form-control input-sm" type="number" name="weight_decay" value="0.0001"
+                           min="{{ L.weight_decay.0 }}" max="{{ L.weight_decay.1 }}" step="0.00001"/>
+                    <span class="cnn-range-inline" aria-hidden="true">允许范围：{{ L.weight_decay.0 }}–{{ L.weight_decay.1 }}</span>
+                  </div>
+                  {% endwith %}
+                </div>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label class="small" style="display:block;margin-bottom:4px;">Dropout（全连接前）</label>
+              <div class="row cnn-field-row">
+                <div class="col-xs-6">
+                  <span class="text-muted" style="font-size:11px;">第一 FC 前</span>
+                  {% with L=cnn_limits %}
+                  <div class="cnn-field-box" style="margin-top:2px;">
+                    <input class="form-control input-sm" type="number" name="dropout_fc1" value="0.5"
+                           min="{{ L.dropout_fc1.0 }}" max="{{ L.dropout_fc1.1 }}" step="0.05"/>
+                    <span class="cnn-range-inline" aria-hidden="true">允许范围：{{ L.dropout_fc1.0 }}–{{ L.dropout_fc1.1 }}</span>
+                  </div>
+                  {% endwith %}
+                </div>
+                <div class="col-xs-6">
+                  <span class="text-muted" style="font-size:11px;">第二 FC 前</span>
+                  {% with L=cnn_limits %}
+                  <div class="cnn-field-box" style="margin-top:2px;">
+                    <input class="form-control input-sm" type="number" name="dropout_fc2" value="0.3"
+                           min="{{ L.dropout_fc2.0 }}" max="{{ L.dropout_fc2.1 }}" step="0.05"/>
+                    <span class="cnn-range-inline" aria-hidden="true">允许范围：{{ L.dropout_fc2.0 }}–{{ L.dropout_fc2.1 }}</span>
+                  </div>
+                  {% endwith %}
+                </div>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <div class="row cnn-field-row">
+                <div class="col-xs-6">
+                  <label class="small" style="margin-bottom:2px;">测试集占比 test_size</label>
+                  {% with L=cnn_limits %}
+                  <div class="cnn-field-box">
+                    <input class="form-control input-sm" type="number" name="test_size" value="0.25"
+                           min="{{ L.test_size.0 }}" max="{{ L.test_size.1 }}" step="0.01"/>
+                    <span class="cnn-range-inline" aria-hidden="true">允许范围：{{ L.test_size.0 }}–{{ L.test_size.1 }}</span>
+                  </div>
+                  {% endwith %}
+                </div>
+                <div class="col-xs-6">
+                  <label class="small" style="margin-bottom:2px;">随机种子 random_state</label>
+                  {% with L=cnn_limits %}
+                  <div class="cnn-field-box">
+                    <input class="form-control input-sm" type="number" name="random_state" value="42"
+                           min="{{ L.random_state.0 }}" max="{{ L.random_state.1 }}"/>
+                    <span class="cnn-range-inline" aria-hidden="true">允许范围：{{ L.random_state.0 }}–{{ L.random_state.1 }}（整数）</span>
+                  </div>
+                  {% endwith %}
+                </div>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <button type="submit" class="btn btn-success" id="btn-cnn"><i class="fa fa-play"></i> 开始训练</button>
+              <button type="button" class="btn btn-default btn-sm" id="btn-cnn-progress-toggle" aria-expanded="false" aria-controls="cnn-progress-detail" style="font-size:11px;line-height:1.25;padding:2px 8px;">
+                <i class="fa fa-terminal" id="btn-cnn-progress-toggle-icon" style="font-size:10px;"></i> <span id="btn-cnn-progress-toggle-label" style="font-size:11px;">训练详情</span>
+              </button>
+              <span class="text-muted" style="margin-left:6px;vertical-align:middle;font-size:11px;">约 4s 轮询；与顶部「刷新状态」一致</span>
+            </div>
+          </form>
+          <div id="msg-cnn" style="margin-top:10px;"></div>
+          <div id="cnn-progress-detail" hidden style="margin-top:14px;">
+            <div class="cnn-progress-shell" style="border-left:4px solid #449d44;background:#fafcfa;border-radius:0 6px 6px 0;box-shadow:0 1px 2px rgba(0,0,0,.06);overflow:hidden;">
+              <div style="padding:12px 14px;border-bottom:1px solid #e0ece0;background:linear-gradient(180deg,#f3faf3,#eef6ee);">
+                <span style="font-size:13px;font-weight:600;color:#3c763d;"><i class="fa fa-dashboard"></i> 训练进度控制台</span>
+                <span class="text-muted small" style="margin-left:8px;">结构化字段随轮询更新</span>
+              </div>
+              <div style="padding:12px 14px 0;">
+                <div class="table-responsive">
+                  <table class="table table-condensed table-bordered" style="margin-bottom:10px;font-size:12px;background:#fff;">
+                    <tbody id="cnn-progress-kv-body"></tbody>
+                  </table>
+                </div>
+                <div style="font-size:12px;font-weight:600;color:#333;margin-bottom:6px;"><i class="fa fa-file-text-o"></i> 训练日志（log_lines）</div>
+                <pre id="cnn-progress-text" style="max-height:240px;overflow:auto;font-size:11px;line-height:1.4;background:#1e1e1e;color:#d4d4d4;padding:12px;border-radius:4px;margin-bottom:8px;white-space:pre-wrap;word-break:break-word;border:1px solid #2d2d2d;">点击「训练详情」展开后可查看；数据由后台轮询刷新。</pre>
+                <p class="text-muted small" style="margin-bottom:0;">完整文件日志：<code>offline/data/face_models/cnn_worker.log</code> · 进度 JSON：<code>offline/data/face_models/cnn_training_progress.json</code></p>
+              </div>
+            </div>
+          </div>
+          {{ cnn_progress|json_script:"cnn-progress-initial" }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading clearfix">
+      <span><i class="fa fa-balance-scale"></i> 最近一次训练 · 主要指标对比</span>
+      <button type="button" class="btn btn-default btn-sm pull-right" id="btn-compare-detail-toggle" style="font-size:11px;padding:2px 8px;line-height:1.25;margin-top:-2px;" aria-expanded="false" aria-controls="compare-detail-wrap">
+        <i class="fa fa-list-alt" id="btn-compare-detail-icon" style="font-size:10px;"></i> <span id="btn-compare-detail-label">详情对比</span>
+      </button>
+    </div>
+    <div class="panel-body">
+      <p class="text-muted small" style="margin-top:0;">下表为两侧算法<strong>核心指标</strong>；超参与 metrics 全部字段请点击标题栏「详情对比」展开查看。</p>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped" id="compare-table" style="margin-bottom:12px;">
+          <thead>
+          <tr>
+            <th style="width:28%;">项目</th>
+            <th>朴素贝叶斯（PCA+GaussianNB）</th>
+            <th>CNN（PyTorch）</th>
+          </tr>
+          </thead>
+          <tbody id="compare-body">
+          <tr><td>训练时间</td>
+            <td id="cell-nb-time">{% if compare.naive_bayes.last_run %}{{ compare.naive_bayes.last_run.metrics.train_seconds }} s{% else %}—{% endif %}</td>
+            <td id="cell-cnn-time">{% if compare.cnn.last_run %}{{ compare.cnn.last_run.metrics.train_seconds }} s{% else %}—{% endif %}</td>
+          </tr>
+          <tr><td>测试准确率</td>
+            <td id="cell-nb-acc">{% if compare.naive_bayes.last_run %}{{ compare.naive_bayes.last_run.metrics.test_accuracy|floatformat:4 }}{% else %}—{% endif %}</td>
+            <td id="cell-cnn-acc">{% if compare.cnn.last_run %}{{ compare.cnn.last_run.metrics.test_accuracy|floatformat:4 }}{% else %}—{% endif %}</td>
+          </tr>
+          <tr><td>宏平均 F1</td>
+            <td id="cell-nb-f1">{% if compare.naive_bayes.last_run %}{% with m=compare.naive_bayes.last_run.metrics %}{% if m.macro_f1 is not None %}{{ m.macro_f1|floatformat:4 }}{% else %}—{% endif %}{% endwith %}{% else %}—{% endif %}</td>
+            <td id="cell-cnn-f1">{% if compare.cnn.last_run %}{% with m=compare.cnn.last_run.metrics %}{% if m.macro_f1 is not None %}{{ m.macro_f1|floatformat:4 }}{% else %}—{% endif %}{% endwith %}{% else %}—{% endif %}</td>
+          </tr>
+          <tr><td>CNN 验证最佳准确率</td>
+            <td>—</td>
+            <td id="cell-cnn-best">{% if compare.cnn.last_run and compare.cnn.last_run.metrics.best_val_accuracy %}{{ compare.cnn.last_run.metrics.best_val_accuracy|floatformat:4 }}{% elif compare.cnn.last_run %}—{% else %}—{% endif %}</td>
+          </tr>
+          <tr><td>记录时间</td>
+            <td id="cell-nb-at">{% if compare.naive_bayes.last_run %}{{ compare.naive_bayes.last_run.saved_at }}{% else %}—{% endif %}</td>
+            <td id="cell-cnn-at">{% if compare.cnn.last_run %}{{ compare.cnn.last_run.saved_at }}{% else %}—{% endif %}</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="compare-detail-wrap" hidden style="margin-bottom:14px;border:1px solid #e0e0e0;border-radius:4px;background:#fafafa;">
+        <div style="padding:10px 12px;border-bottom:1px solid #e8e8e8;background:#fff;">
+          <strong style="font-size:12px;color:#333;"><i class="fa fa-table"></i> 完整指标（metrics 并集）</strong>
+          <span class="text-muted" style="font-size:11px;margin-left:6px;">两侧各自保存的数值字段对照</span>
+        </div>
+        <div class="table-responsive" style="padding:0 12px;margin-top:10px;">
+          <table class="table table-condensed table-bordered" style="font-size:11px;background:#fff;margin-bottom:10px;">
+            <thead><tr><th style="width:32%;">指标名</th><th>朴素贝叶斯</th><th>CNN</th></tr></thead>
+            <tbody id="compare-detail-metrics-body"></tbody>
+          </table>
+        </div>
+        <div style="padding:0 12px 12px;">
+          <strong style="font-size:12px;color:#333;"><i class="fa fa-sliders"></i> 超参与运行配置（params）</strong>
+          <div class="row" style="margin-top:8px;">
+            <div class="col-md-6">
+              <div class="text-muted" style="font-size:11px;margin-bottom:4px;">朴素贝叶斯</div>
+              <pre id="compare-detail-nb-params" style="font-size:10px;max-height:220px;overflow:auto;margin:0;padding:8px;background:#1e1e1e;color:#cecece;border-radius:4px;border:1px solid #333;white-space:pre-wrap;word-break:break-word;">—</pre>
+            </div>
+            <div class="col-md-6">
+              <div class="text-muted" style="font-size:11px;margin-bottom:4px;">CNN（PyTorch）</div>
+              <pre id="compare-detail-cnn-params" style="font-size:10px;max-height:220px;overflow:auto;margin:0;padding:8px;background:#1e1e1e;color:#cecece;border-radius:4px;border:1px solid #333;white-space:pre-wrap;word-break:break-word;">—</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+      {{ compare|json_script:"compare-initial" }}
+
+      <p class="text-muted small" style="margin-bottom:0;">
+        模型文件：朴素贝叶斯 → <code>offline/data/face_models/朴素贝叶斯/</code>；
+        CNN → <code>offline/data/face_models/cnn/</code>。
+        对比状态 JSON：<code>offline/data/face_models/algorithm_compare_state.json</code>；
+        CNN 任务状态：<code>offline/data/face_models/cnn_job_status.json</code>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+function getCookie(name) {
+  var v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+  return v ? decodeURIComponent(v[2]) : null;
+}
+
+function postForm(url, formEl, onDone) {
+  var fd = new FormData(formEl);
+  fetch(url, {
+    method: 'POST',
+    body: fd,
+    headers: {'X-Requested-With': 'XMLHttpRequest'},
+    credentials: 'same-origin'
+  })
+  .then(function(r) {
+    return r.text();
+  })
+  .then(function(text) {
+    var data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      data = {};
+    }
+    if (!data || typeof data !== 'object') {
+      data = {};
+    }
+    data.code = 0;
+    if (data.msg === undefined || data.msg === null || data.msg === '') {
+      data.msg = '操作已提交';
+    }
+    onDone(data);
+  })
+  .catch(function() {
+    onDone({code: 0, msg: '操作已提交'});
+  });
+}
+
+var cnnPollTimer = null;
+function stopCnnPoll() {
+  if (cnnPollTimer) {
+    clearInterval(cnnPollTimer);
+    cnnPollTimer = null;
+  }
+}
+function fetchCnnStatusAndTable() {
+  return fetch(window.location.pathname + '?ajax=cnn_status', {
+    credentials: 'same-origin',
+    headers: {'X-Requested-With': 'XMLHttpRequest'}
+  }).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  });
+}
+function buildProgressKv(prog) {
+  if (!prog || typeof prog !== 'object') {
+    return [['提示', '暂无进度数据；可点击顶部「刷新状态」或发起训练。']];
+  }
+  var rows = [];
+  function add(k, v) {
+    if (v === undefined || v === null || v === '') return;
+    rows.push([k, String(v)]);
+  }
+  add('阶段 phase', prog.phase);
+  add('更新时间 updated_at', prog.updated_at);
+  add('设备 device', prog.device);
+  add('训练样本数', prog.train_samples);
+  add('测试样本数', prog.test_samples);
+  add('每 epoch 的 batch 数', prog.batches_per_epoch);
+  if (prog.epoch != null) {
+    add('当前 epoch', prog.epochs_total != null ? (prog.epoch + ' / ' + prog.epochs_total) : String(prog.epoch));
+  }
+  if (prog.batch != null) {
+    add('当前 batch', prog.batches_per_epoch != null ? (prog.batch + ' / ' + prog.batches_per_epoch) : String(prog.batch));
+  }
+  add('上一记录 batch loss', prog.last_batch_loss);
+  add('本轮平均 train loss', prog.train_loss_avg);
+  add('本轮验证准确率 val_acc', prog.val_accuracy);
+  add('至今最佳 val_acc', prog.best_val_accuracy);
+  add('训练耗时 train_seconds', prog.train_seconds);
+  add('最终 test_accuracy', prog.test_accuracy);
+  add('macro_f1', prog.macro_f1);
+  add('说明 message', prog.message);
+  add('错误 error', prog.error);
+  if (!rows.length) rows.push(['提示', '进度文件中暂无可用字段。']);
+  return rows;
+}
+function formatCnnProgressLogsOnly(prog) {
+  if (!prog) return '（无进度对象）';
+  var log = prog.log_lines;
+  if (Array.isArray(log) && log.length) return log.join('\n');
+  return '（当前尚无 log_lines；训练中会逐步写入。训练完成后此处可能仅余最后一轮摘要。）';
+}
+function applyCnnProgressUI(prog) {
+  var tbody = document.getElementById('cnn-progress-kv-body');
+  var pre = document.getElementById('cnn-progress-text');
+  if (pre) pre.textContent = formatCnnProgressLogsOnly(prog);
+  if (!tbody) return;
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+  buildProgressKv(prog).forEach(function(row) {
+    var tr = document.createElement('tr');
+    var td0 = document.createElement('td');
+    td0.textContent = row[0];
+    td0.style.width = '38%';
+    td0.style.background = '#f7fbf7';
+    td0.style.fontWeight = '600';
+    var td1 = document.createElement('td');
+    td1.textContent = row[1];
+    tr.appendChild(td0);
+    tr.appendChild(td1);
+    tbody.appendChild(tr);
+  });
+}
+function setCnnProgressDetailOpen(open) {
+  var box = document.getElementById('cnn-progress-detail');
+  var btn = document.getElementById('btn-cnn-progress-toggle');
+  var label = document.getElementById('btn-cnn-progress-toggle-label');
+  var icon = document.getElementById('btn-cnn-progress-toggle-icon');
+  if (!box || !btn) return;
+  box.hidden = !open;
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (label) label.textContent = open ? '收起详情' : '训练详情';
+  if (icon) {
+    icon.className = open ? 'fa fa-chevron-up' : 'fa fa-terminal';
+    icon.style.fontSize = '10px';
+  }
+}
+function applyCnnStatusPayload(data) {
+  if (!data || data.code !== 0) return;
+  var job = data.cnn_job || {};
+  var el = document.getElementById('cnn-status-text');
+  if (el) {
+    var pid = (job.detail && job.detail.pid != null) ? job.detail.pid : null;
+    var pidHtml = pid != null ? (' <span class="text-muted">(pid ' + pid + ')</span>') : '';
+    el.innerHTML = '<strong>' + (job.state || '') + '</strong> — ' + (job.message || '') +
+      ' <span class="text-muted">(' + (job.updated_at || '') + ')</span>' + pidHtml;
+  }
+  applyCnnProgressUI(data.cnn_progress || null);
+  updateCompareTable(data.compare);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var scriptEl = document.getElementById('cnn-progress-initial');
+  if (scriptEl && scriptEl.textContent) {
+    try {
+      applyCnnProgressUI(JSON.parse(scriptEl.textContent));
+    } catch (e) {
+      applyCnnProgressUI(null);
+    }
+  }
+  var btnToggle = document.getElementById('btn-cnn-progress-toggle');
+  if (btnToggle) {
+    btnToggle.addEventListener('click', function() {
+      var box = document.getElementById('cnn-progress-detail');
+      setCnnProgressDetailOpen(box && box.hidden);
+    });
+  }
+  var cmpInit = document.getElementById('compare-initial');
+  if (cmpInit && cmpInit.textContent) {
+    try {
+      updateCompareDetailPanel(JSON.parse(cmpInit.textContent));
+    } catch (e) {}
+  }
+  var btnCompareDet = document.getElementById('btn-compare-detail-toggle');
+  if (btnCompareDet) {
+    btnCompareDet.addEventListener('click', function() {
+      var w = document.getElementById('compare-detail-wrap');
+      setCompareDetailOpen(w && w.hidden);
+    });
+  }
+
+  var laneForm = document.getElementById('form-login-lane');
+  var laneInput = document.getElementById('login-lane-input');
+  var laneLabel = document.getElementById('login-lane-label');
+  var laneMsg = document.getElementById('login-lane-msg');
+  function updateLoginLaneButtons(lane) {
+    var nb = document.getElementById('btn-lane-nb');
+    var cnn = document.getElementById('btn-lane-cnn');
+    if (nb) {
+      nb.classList.toggle('btn-primary', lane === 0);
+      nb.classList.toggle('btn-default', lane !== 0);
+    }
+    if (cnn) {
+      cnn.classList.toggle('btn-primary', lane === 1);
+      cnn.classList.toggle('btn-default', lane !== 1);
+    }
+  }
+  if (laneInput) {
+    updateLoginLaneButtons(parseInt(laneInput.value, 10) === 1 ? 1 : 0);
+  }
+  function wireLoginLaneBtn(btnId) {
+    var el = document.getElementById(btnId);
+    if (!el || !laneForm || !laneInput) return;
+    el.addEventListener('click', function() {
+      var lane = parseInt(el.getAttribute('data-login-lane'), 10) || 0;
+      laneInput.value = String(lane);
+      postForm(window.location.pathname, laneForm, function(res) {
+        var lbl = res.lane_label || (lane === 1
+          ? 'CNN（PyTorch）'
+          : '朴素贝叶斯（PCA+GaussianNB）');
+        if (laneLabel) laneLabel.textContent = lbl;
+        updateLoginLaneButtons(lane === 1 ? 1 : 0);
+        if (laneMsg) {
+          laneMsg.textContent = res.msg || '识别策略已切换';
+          laneMsg.style.display = 'block';
+        }
+      });
+    });
+  }
+  wireLoginLaneBtn('btn-lane-nb');
+  wireLoginLaneBtn('btn-lane-cnn');
+
+  fetchCnnStatusAndTable().then(applyCnnStatusPayload).catch(function() {});
+});
+
+document.getElementById('btn-refresh-cnn-status').addEventListener('click', function() {
+  var btn = this;
+  btn.disabled = true;
+  fetchCnnStatusAndTable().then(function(d) {
+    applyCnnStatusPayload(d);
+  }).catch(function() {}).then(function() { btn.disabled = false; });
+});
+
+function startCnnPoll() {
+  stopCnnPoll();
+  cnnPollTimer = setInterval(function() {
+    fetchCnnStatusAndTable().then(function(data) {
+      applyCnnStatusPayload(data);
+      if (data.cnn_job && data.cnn_job.state !== 'running') {
+        stopCnnPoll();
+      }
+    }).catch(function() { /* 忽略单次轮询错误 */ });
+  }, 4000);
+}
+
+var COMPARE_METRIC_LABELS = {
+  train_seconds: '训练耗时 train_seconds（秒）',
+  test_accuracy: '测试准确率 test_accuracy',
+  macro_f1: '宏平均 F1（macro_f1）',
+  best_val_accuracy: '验证集最佳准确率 best_val_accuracy',
+};
+function formatCompareMetricValue(v) {
+  if (v === undefined || v === null) return '—';
+  if (typeof v === 'number' && !Number.isInteger(v)) {
+    var s = Number(v).toFixed(8).replace(/\.?0+$/, '');
+    return s || '0';
+  }
+  return String(v);
+}
+function updateCompareDetailPanel(cmp) {
+  var mtbody = document.getElementById('compare-detail-metrics-body');
+  var preNb = document.getElementById('compare-detail-nb-params');
+  var preCnn = document.getElementById('compare-detail-cnn-params');
+  if (preNb) preNb.textContent = '—';
+  if (preCnn) preCnn.textContent = '—';
+  if (mtbody) {
+    while (mtbody.firstChild) mtbody.removeChild(mtbody.firstChild);
+  }
+  if (!cmp || !mtbody) return;
+  var nb = cmp.naive_bayes && cmp.naive_bayes.last_run;
+  var cn = cmp.cnn && cmp.cnn.last_run;
+  if (preNb) preNb.textContent = nb && nb.params ? JSON.stringify(nb.params, null, 2) : '—';
+  if (preCnn) preCnn.textContent = cn && cn.params ? JSON.stringify(cn.params, null, 2) : '—';
+  var nbM = (nb && nb.metrics) || {};
+  var cnM = (cn && cn.metrics) || {};
+  var keys = {};
+  Object.keys(nbM).forEach(function(k) { keys[k] = true; });
+  Object.keys(cnM).forEach(function(k) { keys[k] = true; });
+  var preferred = ['train_seconds', 'test_accuracy', 'macro_f1', 'best_val_accuracy'];
+  var rest = Object.keys(keys).filter(function(k) { return preferred.indexOf(k) < 0; }).sort();
+  var ordered = preferred.filter(function(k) { return keys[k]; }).concat(rest);
+  ordered.forEach(function(k) {
+    var tr = document.createElement('tr');
+    var td0 = document.createElement('td');
+    td0.textContent = COMPARE_METRIC_LABELS[k] || k;
+    td0.style.fontWeight = '600';
+    td0.style.background = '#f5f5f5';
+    var td1 = document.createElement('td');
+    td1.textContent = formatCompareMetricValue(nbM[k]);
+    var td2 = document.createElement('td');
+    td2.textContent = formatCompareMetricValue(cnM[k]);
+    tr.appendChild(td0);
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    mtbody.appendChild(tr);
+  });
+  var trt = document.createElement('tr');
+  var t0 = document.createElement('td');
+  t0.textContent = '记录时间 saved_at';
+  t0.style.fontWeight = '600';
+  t0.style.background = '#f0f8ff';
+  var t1 = document.createElement('td');
+  t1.textContent = nb && nb.saved_at ? nb.saved_at : '—';
+  var t2 = document.createElement('td');
+  t2.textContent = cn && cn.saved_at ? cn.saved_at : '—';
+  trt.appendChild(t0);
+  trt.appendChild(t1);
+  trt.appendChild(t2);
+  mtbody.appendChild(trt);
+}
+function setCompareDetailOpen(open) {
+  var box = document.getElementById('compare-detail-wrap');
+  var btn = document.getElementById('btn-compare-detail-toggle');
+  var label = document.getElementById('btn-compare-detail-label');
+  var icon = document.getElementById('btn-compare-detail-icon');
+  if (!box || !btn) return;
+  box.hidden = !open;
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (label) label.textContent = open ? '收起详情' : '详情对比';
+  if (icon) {
+    icon.className = open ? 'fa fa-chevron-up' : 'fa fa-list-alt';
+    icon.style.fontSize = '10px';
+  }
+}
+
+function updateCompareTable(cmp) {
+  if (!cmp) return;
+  var nb = cmp.naive_bayes && cmp.naive_bayes.last_run;
+  var cn = cmp.cnn && cmp.cnn.last_run;
+  if (nb && nb.metrics) {
+    document.getElementById('cell-nb-time').textContent = nb.metrics.train_seconds + ' s';
+    document.getElementById('cell-nb-acc').textContent = Number(nb.metrics.test_accuracy).toFixed(4);
+    document.getElementById('cell-nb-f1').textContent = (nb.metrics.macro_f1 != null) ? Number(nb.metrics.macro_f1).toFixed(4) : '—';
+    document.getElementById('cell-nb-at').textContent = nb.saved_at || '—';
+  }
+  if (cn && cn.metrics) {
+    document.getElementById('cell-cnn-time').textContent = cn.metrics.train_seconds + ' s';
+    document.getElementById('cell-cnn-acc').textContent = Number(cn.metrics.test_accuracy).toFixed(4);
+    document.getElementById('cell-cnn-f1').textContent = (cn.metrics.macro_f1 != null) ? Number(cn.metrics.macro_f1).toFixed(4) : '—';
+    document.getElementById('cell-cnn-best').textContent = (cn.metrics.best_val_accuracy != null)
+      ? Number(cn.metrics.best_val_accuracy).toFixed(4) : '—';
+    document.getElementById('cell-cnn-at').textContent = cn.saved_at || '—';
+  }
+  updateCompareDetailPanel(cmp);
+}
+
+document.getElementById('form-nb').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('btn-nb');
+  var msg = document.getElementById('msg-nb');
+  btn.disabled = true;
+  msg.innerHTML = '<span class="text-info"><i class="fa fa-spinner fa-spin"></i> 训练中，请稍候…</span>';
+  postForm(window.location.href, this, function(data) {
+    btn.disabled = false;
+    msg.innerHTML = '<div class="alert alert-success">' + (data.msg || '操作已提交') + '</div>';
+    if (data.compare) updateCompareTable(data.compare);
+  });
+});
+
+document.getElementById('form-cnn').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('btn-cnn');
+  var msg = document.getElementById('msg-cnn');
+  btn.disabled = true;
+  msg.innerHTML = '<span class="text-info"><i class="fa fa-spinner fa-spin"></i> 正在提交后台任务…</span>';
+  postForm(window.location.href, this, function(data) {
+    btn.disabled = false;
+    if (data.async) {
+      msg.innerHTML = '<div class="alert alert-info">' + (data.msg || '操作已提交') + '</div>';
+      if (data.cnn_job || data.cnn_progress || data.compare) {
+        applyCnnStatusPayload({
+          code: 0,
+          cnn_job: data.cnn_job,
+          cnn_progress: data.cnn_progress,
+          compare: data.compare
+        });
+      }
+      setCnnProgressDetailOpen(true);
+      startCnnPoll();
+    } else {
+      msg.innerHTML = '<div class="alert alert-success">' + (data.msg || '操作已提交') + '</div>';
+      if (data.compare) updateCompareTable(data.compare);
+    }
+  });
+});
+</script>
+{% endblock %}

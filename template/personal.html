@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+{% block right-panel-content %}
+  {% if inform_message %}
+    {# 绿色：alert-success       黄色：alert-warning  红色：alert-danger #}
+    <div class="alert alert-dismissable alert-{{ inform_type }}" style="text-align: center; margin: 10px 0;">
+      <button type="button" class="close" data-dismiss="alert">×</button>
+      {{ inform_message }}
+    </div>
+  {% endif %}
+  <div class="col-sm3 col-md-2 sidebar" style="width: 200px;margin-right: 200px">
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav navbar-left">
+        <li style="background-color: darkgrey;">
+          <a href="{% url 'personal' %}" style="font-size: 20px;color: white">我的信息
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_questionnaire' %}" >调查问卷
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_booking' %}" >我的预订
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_like' %}">我的点赞
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_collect' %}">我的收藏
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_comments' %}" >我的评论
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_rate' %}" >我的评分
+          </a>
+        </li>
+
+      </ul>
+    </div>
+
+  </div>
+  <div style="color: #557f55;margin-left: 200px">
+    <h3 align="center">我的个人信息</h3>
+    <form action="{% url 'personal' %}" method='post' autocomplete="on" style="max-width: 800px; margin: 0 auto;">
+      {% csrf_token %}
+      <div class="row">
+        {# 账号信息 #}
+        <div class="form-group col-md-6">
+          <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+          {{ form.username.errors }}
+          {{ form.username }}
+        </div>
+        <div class="form-group col-md-6">
+          <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+          {{ form.password.errors }}
+          {{ form.password }}
+        </div>
+      </div>
+      
+      {# 基本信息 #}
+      <div class="row">
+        <div class="form-group col-md-6">
+          <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+          {{ form.first_name.errors }}
+          {{ form.first_name }}
+        </div>
+        <div class="form-group col-md-6">
+          <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+          {{ form.last_name.errors }}
+          {{ form.last_name }}
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="form-group col-md-6">
+          <label for="{{ form.age.id_for_label }}">{{ form.age.label }}</label>
+          {{ form.age.errors }}
+          {{ form.age }}
+        </div>
+      </div>
+      
+      {# 性别字段单独占一行 #}
+      <div class="form-group">
+        <label for="{{ form.gender.id_for_label }}">{{ form.gender.label }}</label>
+        {{ form.gender.errors }}
+        {{ form.gender }}
+      </div>
+      
+      {# 联系信息 #}
+      <div class="row">
+        <div class="form-group col-md-6">
+          <label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
+          {{ form.phone.errors }}
+          {{ form.phone }}
+        </div>
+        <div class="form-group col-md-6">
+          <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+          {{ form.email.errors }}
+          {{ form.email }}
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="form-group col-md-6">
+          <label for="{{ form.country.id_for_label }}">{{ form.country.label }}</label>
+          {{ form.country.errors }}
+          {{ form.country }}
+        </div>
+        <div class="form-group col-md-6">
+          <label for="{{ form.address.id_for_label }}">{{ form.address.label }}</label>
+          {{ form.address.errors }}
+          {{ form.address }}
+        </div>
+      </div>
+      
+      {# 证件信息 #}
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+        <h4 style="color: #5e8e5e; margin-bottom: 15px; font-size: 16px;">证件信息</h4>
+        <div class="row">
+          <div class="form-group col-md-6">
+            <label for="{{ form.id_type.id_for_label }}">{{ form.id_type.label }}</label>
+            {{ form.id_type.errors }}
+            {{ form.id_type }}
+          </div>
+          <div class="form-group col-md-6">
+            <label for="{{ form.id_number.id_for_label }}">{{ form.id_number.label }}</label>
+            {{ form.id_number.errors }}
+            {{ form.id_number }}
+            <div id="id_card_upload_area" style="margin-top: 10px;">
+              <input type="file" id="id_card_image" accept="image/*" style="display: none;">
+              <button type="button" id="upload_id_btn" onclick="document.getElementById('id_card_image').click()" 
+                      style="color: #5e8e5e; border: 1px solid #5e8e5e; padding: 5px 10px; background: white; cursor: pointer; border-radius: 3px;">
+                <span class="glyphicon glyphicon-camera"></span> 上传身份证识别
+              </button>
+              <span id="recognize_status" style="margin-left: 10px; color: #888; font-size: 12px;"></span>
+              <div id="image_preview" style="margin-top: 10px; display: none;">
+                <img id="preview_img" src="" alt="预览" style="max-width: 300px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group col-md-6">
+            <label for="{{ form.id_expiry_date.id_for_label }}">{{ form.id_expiry_date.label }}</label>
+            {{ form.id_expiry_date.errors }}
+            {{ form.id_expiry_date }}
+          </div>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin-top: 20px;">
+        <button type="reset" style="color: #5e8e5e; margin-right: 20px;">
+          <span class="glyphicon glyphicon-remove">取消</span>
+        </button>
+        <button type="submit" style="color: #5e8e5e;">
+          <span class="glyphicon glyphicon-ok">提交</span>
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+{% block bottom-js %}
+<script>
+$(document).ready(function() {
+    // 监听证件类型变化
+    function toggleIdCardUpload() {
+        var idType = $('#id_id_type').val();
+        // 如果证件类型是"身份证"或为空（未选择），都显示上传按钮
+        if (idType === '身份证' || idType === '' || idType === null || idType === undefined) {
+            $('#id_card_upload_area').show();
+        } else {
+            $('#id_card_upload_area').hide();
+            $('#image_preview').hide();
+            $('#recognize_status').html('');
+        }
+    }
+    
+    $('#id_id_type').on('change', toggleIdCardUpload);
+    
+    // 初始化显示状态（默认显示，因为可能是身份证或未选择）
+    $('#id_card_upload_area').show();
+    toggleIdCardUpload();
+    
+    $('#id_card_image').on('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) {
+            return;
+        }
+        
+        // 检查文件类型
+        if (!file.type.match('image.*')) {
+            $('#recognize_status').html('<span style="color: red;">请选择图片文件（jpg、png、bmp格式）</span>');
+            return;
+        }
+        
+        // 检查文件大小（限制20MB）
+        if (file.size > 20 * 1024 * 1024) {
+            $('#recognize_status').html('<span style="color: red;">图片大小不能超过20MB</span>');
+            return;
+        }
+        
+        // 显示预览
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $('#preview_img').attr('src', e.target.result);
+            $('#image_preview').show();
+        };
+        reader.readAsDataURL(file);
+        
+        // 显示识别中状态
+        $('#recognize_status').html('<span style="color: #5e8e5e;"><span class="glyphicon glyphicon-refresh glyphicon-spin"></span> 正在识别，请稍候...</span>');
+        $('#upload_id_btn').prop('disabled', true);
+        
+        // 创建FormData
+        var formData = new FormData();
+        formData.append('id_card_image', file);
+        formData.append('csrfmiddlewaretoken', $('[name=csrfmiddlewaretoken]').val());
+        
+        // 发送AJAX请求
+        $.ajax({
+            url: '{% url "recognize_id_card" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            timeout: 120000, // 120秒超时（识别较慢时避免误判超时）
+            success: function(response) {
+                $('#upload_id_btn').prop('disabled', false);
+                if (response.code === 0) {
+                    // 识别成功，填充身份证号码
+                    $('#id_id_number').val(response.id_number);
+                    $('#recognize_status').html('<span style="color: green;"><span class="glyphicon glyphicon-ok"></span> 识别成功！身份证号码已自动填充</span>');
+                    // 3秒后清除提示
+                    setTimeout(function() {
+                        $('#recognize_status').html('');
+                    }, 3000);
+                } else {
+                    // 识别失败
+                    $('#recognize_status').html('<span style="color: red;"><span class="glyphicon glyphicon-exclamation-sign"></span> ' + response.msg + '</span>');
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#upload_id_btn').prop('disabled', false);
+                var errorMsg = '识别失败，请重试';
+                if (status === 'timeout') {
+                    errorMsg = '识别超时，请检查图片大小或网络连接';
+                }
+                $('#recognize_status').html('<span style="color: red;"><span class="glyphicon glyphicon-exclamation-sign"></span> ' + errorMsg + '</span>');
+                console.error('识别错误:', error);
+            }
+        });
+    });
+});
+</script>
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.glyphicon-spin {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+</style>
+{% endblock %}
+
+

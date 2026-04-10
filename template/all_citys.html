@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load myfilter %}
+{% block right-panel-content %}
+
+  {% if not citys %}
+    <h3 class="text-center">对不起没有城市</h3>
+  {% endif %}
+
+  {% for city in citys %}
+    <div align=center style="width: 30%;display: inline-block;margin-left: 30px;">
+      <div style="display: inline-block;padding: 0;margin-top: 10px;width:47%;height: 54%;background-color: #dbf8cc ">
+        <a href="{% url 'city' city.id %}?selected={{ selected }}">
+          <img src="{% if city.cover_pic %}/{{ city.cover_pic }}{% else %}/static/image/no_image.svg{% endif %}"
+               style="width:180px;height:220px;display:block"
+               alt="城市封面"
+               title="城市封面"
+               onerror="this.onerror=null;this.src='/static/image/no_image.svg';"
+          />
+        </a>
+      </div>
+      <div style="display: inline-block;width: 50%;height:20%;font-size: 18px;color: #5e8e5e">
+        <h3>
+          <a href="{% url 'city' city.id %}?selected={{ selected }}">    {{ city.name }}</a>
+        </h3>
+        <p>
+          <span style="margin-right: 2px">浏览量: </span>
+          {{ city.get_look_num }}
+        </p>
+        <p>
+          <span style="margin-right: 2px">点赞量: </span>
+          {{ city.get_like_num }}
+        </p>
+
+        <p>
+          <span style="margin-right: 2px">收藏量: </span>
+          {{ city.get_collect_num }}
+        </p>
+        <p>
+          <span style="margin-right: 2px">去过人数: </span>
+          {{ city.person_count }}
+        </p>
+
+      </div>
+      <div style="display: inline-block;width: 90%;height: 20%;padding: 0;margin: 0;font-size: 16px;color: #5e8e5e">
+        著名景点：{{ city.sight }}
+      </div>
+    </div>
+
+  {% endfor %}
+  <div class="container-fluid" style="margin-top: 0;padding-top: 0;text-align: center">
+    <ul class="pagination" id="pager">
+      {#上一页按钮开始#}
+      {# 如果当前页有上一页#}
+      {% if citys.has_previous %}
+        {#  当前页的上一页按钮正常使用#}
+        <li class="previous"><a href="{{ path }}?page={{ citys.previous_page_number }}&selected={{ selected }}&city_id={{ city_id }}">上一页</a>
+        </li>
+      {% else %}
+        {# 当前页的不存在上一页时,上一页的按钮不可用#}
+        <li class="previous disabled"><a href="#">上一页</a></li>
+      {% endif %}
+      {#上一页按钮结束#}
+      {# 页码开始#}
+      <li class="item active"><a
+          href="{{ path }}?page={{ citys.number }}&selected={{ selected }}&city_id={{ city_id }}">{{ citys.number }}</a></li>
+      {#            <li class="item"><a href="{{ path }}?page={{ city.number|add:1 }}">{{ city.number|add:1 }}</a></li>#}
+      {#            <li class="item"><a href="{{ path }}?page={{ city.number|add:2 }}">{{ city.number|add:2 }}</a></li>#}
+      {#页码结束#}
+      {# 下一页按钮开始#}
+      {% if citys.has_next %}
+        <li class="next"><a href="{{ path }}?page={{ citys.next_page_number }}&selected={{ selected }}&city_id={{ city_id }}">下一页</a>
+        </li>
+      {% else %}
+        <li class="next disabled"><a href="#">下一页</a></li>
+      {% endif %}
+      <li class="item"><a href="#">
+        {{ citys.number }}/{{ citys.paginator.num_pages }}</a>
+      </li>
+
+    </ul>
+  </div>
+{% endblock %}
+{% block bottom-js %}
+  <script>
+
+
+  </script>
+
+{% endblock %}

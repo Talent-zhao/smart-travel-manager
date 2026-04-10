@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load myfilter %}
+{% block extrastyle %}
+  <style>
+    .booking-toggle {
+      text-align: center;
+      margin: 10px 0 20px;
+    }
+
+    .booking-toggle-inner {
+      display: inline-block;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #d0d0d0;
+      box-shadow: 0 0 3px rgba(0, 0, 0, 0.05);
+      background-color: #ffffff;
+    }
+
+    .booking-toggle-inner a {
+      display: inline-block;
+      padding: 4px 28px;
+      font-size: 14px;
+      text-decoration: none;
+      color: #555;
+      background-color: #ffffff;
+    }
+
+    .booking-toggle-inner a:first-child {
+      border-right: 1px solid #d0d0d0;
+    }
+
+    .booking-toggle-inner a.active {
+      background-color: #0090ff;
+      color: #ffffff;
+    }
+  </style>
+{% endblock %}
+{% block right-panel-content %}
+  <div class="col-sm3 col-md-2 sidebar" style="width: 200px;margin-right: 200px">
+    <div id="navbar3" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav navbar-left">
+        <li>
+          <a href="{% url 'personal' %}">我的信息
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_questionnaire' %}" >调查问卷
+          </a>
+        </li>
+        <li style="background-color: darkgrey;">
+          <a href="{% url 'my_booking' %}" style="font-size: 20px;color: white">我的预订
+          </a>
+        </li>
+        <li >
+          <a  href="{% url 'my_like' %}" >我的点赞
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_collect' %}" >我的收藏
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_comments' %}" >我的评论
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'my_rate' %}" >我的评分
+          </a>
+        </li>
+
+      </ul>
+    </div>
+
+  </div>
+  <div  style="color: #557f55;margin-left: 200px">
+    <div class="booking-toggle">
+      <div class="booking-toggle-inner">
+        <a href="{% url 'my_booking' %}?tab=sight#booking-sight"
+           class="{% if tab == 'sight' %}active{% endif %}">景点预订</a>
+        <a href="{% url 'my_booking' %}?tab=hotel#booking-hotel"
+           class="{% if tab == 'hotel' %}active{% endif %}">酒店预订</a>
+      </div>
+    </div>
+    {% if tab == 'sight' %}
+    <h3 id="booking-sight" align="center">我预订的景点</h3>
+    <table class="table" style="color: #5e8e5e;">
+      <thead>
+      <tr>
+        <th>城市</th>
+        <th>景点</th>
+        <!--<th style="width: 400px">提示</th>-->
+        <th>时间</th>
+        <th>操作</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for booking_sight in booking_sights %}
+        <tr>
+          <td>{{ booking_sight.sight.city.name }}</td>
+          <td>{{ booking_sight.sight.name }}</td>
+          <!--<td>
+                    {% for tip in booking_sight.sight.tips|to_list %}
+                            <p style="font-size: 16px;margin-bottom: 2px;margin-left: 20px">{{ tip }}</p>
+                        {% endfor %}
+                </td>-->
+          <td>{{ booking_sight.create_time }}</td>
+
+          <td>
+            <button><a href="{% url 'sight' booking_sight.sight.id %}" style="color: #5e8e5e;">查看</a></button>
+            <button onclick="summit_booking({{ booking_sight.sight.id }})" style="color: #5e8e5e;">删除</button>
+
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {% if tab == 'hotel' %}
+    <h3 id="booking-hotel" align="center">我预订的酒店-民宿</h3>
+    <table class="table" style="color: #5e8e5e;">
+      <thead>
+      <tr>
+        <th>城市</th>
+        <th>酒店-民宿</th>
+        <th>入住日期</th>
+        <th>退房日期</th>
+        <th>预订时间</th>
+        <th>操作</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for bh in booking_hotels %}
+        <tr>
+          <td>{{ bh.hotel.city.name }}</td>
+          <td>{{ bh.hotel.name }}</td>
+          <td>
+            <form class="form-inline" method="post" action="{% url 'update_hotel_booking' bh.id %}">
+              {% csrf_token %}
+              <input type="date" class="form-control" name="check_in"
+                     value="{% if bh.check_in %}{{ bh.check_in|date:'Y-m-d' }}{% endif %}"
+                     style="max-width: 180px;">
+          </td>
+          <td>
+              <input type="date" class="form-control" name="check_out"
+                     value="{% if bh.check_out %}{{ bh.check_out|date:'Y-m-d' }}{% endif %}"
+                     style="max-width: 180px;">
+          </td>
+          <td>{{ bh.create_time }}</td>
+          <td>
+              <button type="submit" class="btn btn-xs btn-success">保存</button>
+              <a href="{% url 'cancel_hotel_booking' bh.id %}"
+                 class="btn btn-xs btn-default"
+                 onclick="return confirm('确认取消该酒店预订吗？');">取消预订</a>
+            </form>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="text-center">暂无酒店预订</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+
+{% endblock %}
+{% block bottom-js %}
+  <script>
+      function summit_booking(value) {
+          var csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value;
+          $.ajax({
+              url: window.__user_path_prefix__ + '/booking/' + value + '/',
+              type: 'POST',
+              data: {'is_bookiing': '0'},
+
+              success: function (res) {
+                  if(res.code === 0){
+                      window.location.href = '/login';
+                  }else{
+                      window.location.reload();
+                  }
+
+              },
+              error: function (e) {
+                  window.location.href = '/login';
+              },
+              beforeSend: function (xhr, settings) {
+                  xhr.setRequestHeader("X-CSRFToken", csrftoken);
+              }
+          });
+
+      }
+
+  </script>
+
+{% endblock %}

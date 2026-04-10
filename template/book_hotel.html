@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block right-panel-content %}
+  <div style="margin-bottom: 10px;">
+    <a href="{% url 'all_hotel' %}?selected=all_hotel" style="color: #5e8e5e">返回酒店列表</a>
+  </div>
+
+  <div class="container-fluid" style="color: #5e8e5e;">
+    <h3 class="text-center" style="margin-bottom: 20px;">预订酒店-民宿</h3>
+
+    <div class="row clearfix" style="border:1px dashed #ccc;padding:15px;margin-bottom:20px;">
+      <div class="col-md-3 column" style="text-align:center;">
+        <img class="img-thumbnail hotel-image"
+             alt="酒店图片"
+             title="{{ hotel.name }}"
+             src="{% if hotel.cover_pic %}/{{ hotel.cover_pic }}{% else %}/static/image/hotel_default.jpg{% endif %}"
+             style="width:180px;height:200px;object-fit:cover;"
+             onerror="this.onerror=null;this.src='/static/image/hotel_default.jpg';"
+        />
+      </div>
+      <div class="col-md-9 column">
+        <h3>{{ hotel.name }}</h3>
+        {% if hotel.address %}
+          <p><strong>地址：</strong>{{ hotel.address }}</p>
+        {% endif %}
+        {% if hotel.phone %}
+          <p><strong>电话：</strong>{{ hotel.phone }}</p>
+        {% endif %}
+        {% if hotel.price %}
+          <p><strong>价格：</strong>{{ hotel.price }}</p>
+        {% endif %}
+        <p style="margin-top:10px;">{{ hotel.detail|safe }}</p>
+      </div>
+    </div>
+
+    <form class="form-horizontal" method="post" action="">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="col-sm-2 control-label">入住人姓名</label>
+        <div class="col-sm-4">
+          <input type="text" class="form-control" name="guest_name"
+                 value="{{ user.name|default:user.username }}" placeholder="请输入入住人姓名">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label">联系电话</label>
+        <div class="col-sm-4">
+          <input type="text" class="form-control" name="guest_phone"
+                 value="{{ user.phone }}" placeholder="请输入联系电话">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label">入住日期</label>
+        <div class="col-sm-4">
+          <input type="date" class="form-control" name="check_in">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label">退房日期</label>
+        <div class="col-sm-4">
+          <input type="date" class="form-control" name="check_out">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label">备注</label>
+        <div class="col-sm-6">
+          <textarea class="form-control" name="remark" rows="3" placeholder="可填写特殊需求、到店时间等"></textarea>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-6">
+          <button type="submit" class="btn btn-success">提交预订</button>
+          <a href="{% url 'my_booking' %}" class="btn btn-default" style="margin-left:10px;">查看我的预订</a>
+        </div>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+
+
